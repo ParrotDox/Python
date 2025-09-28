@@ -47,7 +47,7 @@ class mainWindow(QMainWindow):
             QLabel(text="Axis 2 groups"),
             QLabel(text="Claw's rod lengthen and shorten")
         ]
-        self.sliders[0].setRange(-100,100)
+        self.sliders[0].setRange(-250,250)
         self.sliders[1].setRange(0,20)
         self.sliders[2].setRange(-90,90)
         self.previousValue2 = self.sliders[2].value()
@@ -89,9 +89,15 @@ class mainWindow(QMainWindow):
         self.groups = [
             QGraphicsItemGroup(),   #Body, Wheels, other groups
             QGraphicsItemGroup(),   #BaseRod, BaseRodJoint, other group
-            QGraphicsItemGroup(),   #MediumRod, MediumRodJoint, other group
+            QGraphicsItemGroup(),   #MediumRod, other group,
+            QGraphicsItemGroup(),   #MediumRodJoint
             QGraphicsItemGroup()    #ClawRod, Claw
         ]
+        self.parts[0].setZValue(1)
+        self.parts[1].setZValue(2)
+        self.parts[2].setZValue(2)
+        self.parts[4].setZValue(2)
+        self.parts[6].setZValue(2)
         self.groups[0].addToGroup(self.parts[0])    #Body
         self.groups[0].addToGroup(self.parts[1])    #WheelL
         self.groups[0].addToGroup(self.parts[2])    #WheelR
@@ -99,12 +105,13 @@ class mainWindow(QMainWindow):
         self.groups[2].addToGroup(self.parts[4])    #BaseRodJoint
         self.groups[2].addToGroup(self.parts[5])    #MediumRod
         self.groups[3].addToGroup(self.parts[6])    #MediumRodJoint
-        self.groups[3].addToGroup(self.parts[7])    #ClawRod
-        self.groups[3].addToGroup(self.parts[8])    #ClawRod
+        self.groups[4].addToGroup(self.parts[7])    #ClawRod
+        self.groups[4].addToGroup(self.parts[8])    #Claw
 
         self.groups[0].addToGroup(self.groups[1])
         self.groups[1].addToGroup(self.groups[2])
         self.groups[2].addToGroup(self.groups[3])
+        self.groups[3].addToGroup(self.groups[4])
 
         brushes: QBrush = [
             QBrush(QColor(17, 63, 103)),  #brushDarkBlue
@@ -126,7 +133,7 @@ class mainWindow(QMainWindow):
         self.sliders[1].valueChanged.connect(lambda: self.move(self.groups[1], "V", self.sliders[1]))
         self.sliders[2].valueChanged.connect(lambda: self.rotate(self.groups[2], self.sliders[2]))
         self.sliders[3].valueChanged.connect(lambda: self.rotate(self.groups[3], self.sliders[3]))
-        self.sliders[4].valueChanged.connect(lambda: self.move(self.groups[3], "None", self.sliders[4]))
+        self.sliders[4].valueChanged.connect(lambda: self.move(self.groups[4], "None", self.sliders[4]))
 
         #Drawing at scene
         self.scene.addItem(self.groups[0])
