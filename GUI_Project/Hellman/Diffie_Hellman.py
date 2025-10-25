@@ -50,15 +50,17 @@ class DiffieHellmanDemo(QWidget):
         # Простые числа (~20 разрядов)
         p = 32416190071  # простое число
         g = 5
-        a = random.randint(10**9, 10**10)
-        b = random.randint(10**9, 10**10)
-
+        a = random.randint(10**20, 10**21)
+        b = random.randint(10**20, 10**21)
+        
         A = pow(g, a, p)
         B = pow(g, b, p)
 
         K_A = pow(B, a, p)
         K_B = pow(A, b, p)
         K = K_A  # общий ключ
+
+        print(f"a={a} b={b} K_A={K_A} K_B={K_B}")
 
         # Используем тангенс для сдвига
         key_value = abs(math.tan(K)) % 1
