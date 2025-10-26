@@ -1,3 +1,4 @@
+from FIGURES import Figures
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
@@ -11,15 +12,15 @@ from PySide6.QtCore import Qt, Signal, QPointF
 
 class CreateDialog(QDialog):
     
-    dimension: int = 0 #0 - 2D, 1 - 3D
-    points: list[QPointF] = []
-
     def __init__(self):
         super().__init__()
         self.initUI()
         self.setWindowTitle("CreateDialog"); self.setFixedSize(480, 320)
         self.setObjectName("CreateDialog")
-    
+
+        self.figure: int = Figures.LINE
+        self.points: list[QPointF] = []
+
     def initUI(self):
         #Widgets
         tab = QTabWidget(); tab.currentChanged.connect(lambda: self.setDimension(tab))
@@ -57,13 +58,13 @@ class CreateDialog(QDialog):
         #StyleSheets
         pass
     
-    #Events
-    def closeEvent(self, arg__1):
-        self.reject()
-        return super().closeEvent(arg__1)
     #Slots
     def setDimension(self, tab: QTabWidget):
-        self.dimension = tab.currentIndex()
+        option = tab.currentIndex()
+        if option == 0:
+            self.figure = Figures.LINE
+        elif option == 1:
+            self.figure = Figures.CUBE
         return
     def setPoints(self, x1, x2, y1, y2):
         if x1 == x2 and y1 == y2:
