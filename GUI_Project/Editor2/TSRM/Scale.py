@@ -22,6 +22,7 @@ class ScaleDialog(QDialog):
         self.setObjectName("ScaleDialog")
 
         self.line = lineItem
+        self.points: list[QPointF] = []
     
     def initUI(self, figure: Figures):
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -37,15 +38,11 @@ class ScaleDialog(QDialog):
             mainLayout.addWidget(confirm_2D)
         elif figure == Figures.CUBE:
             #widgets
-            rotatorX = QDoubleSpinBox(minimum=-360, maximum=360)
-            rotatorY = QDoubleSpinBox(minimum=-360, maximum=360)
-            rotatorZ = QDoubleSpinBox(minimum=-360, maximum=360)
+            scalerX = QDoubleSpinBox(minimum=-360, maximum=360)
             confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
             #layout
             mainLayout = QVBoxLayout()
-            mainLayout.addWidget(rotatorX)
-            mainLayout.addWidget(rotatorY)
-            mainLayout.addWidget(rotatorZ)
+            mainLayout.addWidget(scalerX)
             mainLayout.addWidget(confirm_3D)
 
         self.setLayout(mainLayout)
@@ -61,5 +58,8 @@ class ScaleDialog(QDialog):
             if isinstance(it, QGraphicsLineItem):
                 lineItem = it
                 break
-        #TODO
+        #get points and scale them
+        startPoint = lineItem.line().p1(); startPoint.setX(startPoint.x()*scaleX); startPoint(startPoint.y()*scaleY)
+        endPoint = lineItem.line().p2(); endPoint.setX(endPoint.x()*scaleX); endPoint(endPoint.y()*scaleY)
+        self.Points = [startPoint, endPoint]
         self.accept()

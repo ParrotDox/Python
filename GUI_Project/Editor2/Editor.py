@@ -126,14 +126,8 @@ class EditorWidget(QWidget):
                 line = self.createCustomLine(points) #line is a group!
                 scene.addItem(line)
                 
-                #Add to objects library
-                data = {
-                    "item": line,
-                    "points": points
-                }
-                item = QListWidgetItem(f"Line {line} {points[0]} {points[1]}") #update name in library
-                item.setData(Qt.ItemDataRole.UserRole, data)
-                library.addItem(item)
+                #Add item to library
+                self.addItemToLibrary(library, line, points)
                 
             elif dialog.figure == Figures.CUBE:
                 pass
@@ -153,15 +147,7 @@ class EditorWidget(QWidget):
             points: list[QPointF] = dialog.points
             newLine = self.updateCustomLine(self.currentObject, points)
             #update info in library
-            listItems = library.findItems("", Qt.MatchFlag.MatchContains)
-            for it in listItems:
-                data = it.data(Qt.ItemDataRole.UserRole)
-                if data["item"] == self.currentObject:
-                    it.setText(f"Line updated {data["item"]}")
-                    data["item"] = newLine
-                    data["points"] = points
-                    it.setData(Qt.ItemDataRole.UserRole, data)
-                    break
+            self.replaceItemInLibrary(library, self.currentObject, newLine, points)
             #redraw line at scene
             scene.removeItem(self.currentObject)
             self.currentObject = newLine
@@ -183,12 +169,7 @@ class EditorWidget(QWidget):
 
         if result == QDialog.DialogCode.Accepted:
             #update text in widgetList element
-            listItems = library.findItems("", Qt.MatchFlag.MatchContains)
-            for it in listItems:
-                data = it.data(Qt.ItemDataRole.UserRole)
-                if data["item"] == self.currentObject:
-                    it.setText(f"Line rotated {data["item"]}")
-                break
+            self.setLibraryItemName(library, self.currentObject, "Line rotated ")
         pass
     def operTranslateDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentObject == None:
@@ -202,13 +183,7 @@ class EditorWidget(QWidget):
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted:
-            #update text in widgetList element
-            listItems = library.findItems("", Qt.MatchFlag.MatchContains)
-            for it in listItems:
-                data = it.data(Qt.ItemDataRole.UserRole)
-                if data["item"] == self.currentObject:
-                    it.setText(f"Line translated {data["item"]}")
-                break
+            self.setLibraryItemName(library, self.currentObject, "Line translated ")
         pass
     def operScaleDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentObject == None:
@@ -221,15 +196,10 @@ class EditorWidget(QWidget):
         dialog = ScaleDialog(figure, self.currentObject)
         result = dialog.exec()
 
-        if result == QDialog.DialogCode.Accepted:
-            #update text in widgetList element
-            listItems = library.findItems("", Qt.MatchFlag.MatchContains)
-            for it in listItems:
-                data = it.data(Qt.ItemDataRole.UserRole)
-                if data["item"] == self.currentObject:
-                    it.setText(f"Line scaled {data["item"]}")
-                break
+        if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
+            self.setLibraryItemName(library, self.currentObject, f"Line scaled ")
         pass
+    
     def deleteCurrentObject(self, scene: QGraphicsScene, library: QListWidget):
         #remove from library
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
@@ -284,6 +254,7 @@ class EditorWidget(QWidget):
         self.currentObject = item
         self.paintFocused()
         print(f"Current object {item}")   
+    
     def setFocusAtLibraryByItem(self, library: QListWidget, item: QGraphicsItemGroup):
         print(item)
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
@@ -294,8 +265,33 @@ class EditorWidget(QWidget):
                 library.setCurrentItem(it)
                 library.setFocus()
                 break
-    def replaceObjectInLibrary(self, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup):
-        pass
+    def addItemToLibrary(self, library: QListWidget, item: QGraphicsItemGroup, points: list[QPointF]):
+        data = {
+                    "item": item,
+                    "points": points
+                }
+        item = QListWidgetItem(f"Item: {item}")
+        item.setData(Qt.ItemDataRole.UserRole, data)
+        library.addItem(item)
+    def replaceItemInLibrary(self, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
+        listItems = library.findItems("", Qt.MatchFlag.MatchContains)
+        for it in listItems:
+            data = it.data(Qt.ItemDataRole.UserRole)
+            if data["item"] == oldItem:
+                it.setText(f"Line updated {data['item']}")
+                data["item"] = newItem
+                data["points"] = points
+                it.setData(Qt.ItemDataRole.UserRole, data)
+                break
+    def setLibraryItemName(self, library: QListWidget, item: QGraphicsItemGroup, text: str):
+        #update text in widgetList element
+        listItems = library.findItems("", Qt.MatchFlag.MatchContains)
+        for it in listItems:
+            data = it.data(Qt.ItemDataRole.UserRole)
+            if data["item"] == item:
+                it.setText(f"{text} {data['item']}")
+            break
+    
     def createCustomLine(self, points: list[QPointF]):
         pointStart = QGraphicsEllipseItem(points[0].x()-5, points[0].y()-5, 10, 10)
         pointEnd = QGraphicsEllipseItem(points[1].x()-5, points[1].y()-5, 10, 10)
