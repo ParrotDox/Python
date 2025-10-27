@@ -3,6 +3,7 @@ from CUD.Update import UpdateDialog
 from TSRM.Translate import TranslateDialog
 from TSRM.Scale import ScaleDialog
 from TSRM.Rotate import RotateDialog
+from TSRM.Mirror import MirrorDialog
 from FIGURES import Figures
 from ViewCustom import QGraphicsViewCustom
 from PySide6.QtWidgets import (
@@ -41,18 +42,18 @@ class EditorWidget(QWidget):
         #widgets
         buttonCreate = QPushButton("C"); buttonCreate.setFixedSize(35,35); buttonCreate.clicked.connect(lambda: self.openCreateDialog(scene, library))
         buttonUpdate = QPushButton("U"); buttonUpdate.setFixedSize(35,35); buttonUpdate.clicked.connect(lambda: self.openUpdateDialog(scene, library))
-        buttonDelete = QPushButton("D"); buttonDelete.setFixedSize(35,35); buttonDelete.clicked.connect(lambda: self.deleteCurrentObject(scene, library))
+        buttonDelete = QPushButton("D"); buttonDelete.setFixedSize(35,35); buttonDelete.clicked.connect(lambda: self.deleteCurrentItem(scene, library))
 
         buttonTranslate = QPushButton("T"); buttonTranslate.setFixedSize(35,35); buttonTranslate.clicked.connect(lambda: self.operTranslateDialog(scene, library))
-        buttonScale = QPushButton("S"); buttonScale.setFixedSize(35,35); buttonScale.clicked.connect(lambda: self.operScaleDialog(scene, library))
+        buttonScale = QPushButton("S"); buttonScale.setFixedSize(35,35); buttonScale.clicked.connect(lambda: self.openScaleDialog(scene, library))
         buttonRotate = QPushButton("R"); buttonRotate.setFixedSize(35,35); buttonRotate.clicked.connect(lambda: self.openRotateDialog(scene, library))
-        buttonMirror = QPushButton("M"); buttonMirror.setFixedSize(35,35)
+        buttonMirror = QPushButton("M"); buttonMirror.setFixedSize(35,35); buttonMirror.clicked.connect(lambda: self.openMirrorDialog(scene, library))
 
         scene = QGraphicsScene(); scene.setSceneRect(-1000,-1000,2000,2000)
-        view = QGraphicsViewCustom(scene); view.itemFocused.connect(lambda scene, item: self.setCurrentObjectByScene(scene, library, item))
+        view = QGraphicsViewCustom(scene); view.itemFocused.connect(lambda scene, item: self.setCurrentItemByScene(scene, library, item))
 
         objectsLabel = QLabel("Objects")
-        library = QListWidget(); library.itemClicked.connect(lambda item: self.setCurrentObjectByLibrary(scene, library, item))
+        library = QListWidget(); library.itemClicked.connect(lambda item: self.setCurrentItemByLibrary(scene, library, item))
 
         #layouts
         mainLayout = QHBoxLayout()
@@ -116,6 +117,7 @@ class EditorWidget(QWidget):
                 line: QGraphicsLineItem = it
                 line.setPen(pen)
         pass
+    #Dialogs
     def openCreateDialog(self, scene: QGraphicsScene, library: QListWidget):
         dialog = CreateDialog()
         result = dialog.exec()
@@ -123,12 +125,9 @@ class EditorWidget(QWidget):
             if dialog.figure == Figures.LINE:
                 #Add to scene
                 points: list[QPointF] = dialog.points
-                line = self.createCustomLine(points) #line is a group!
-                scene.addItem(line)
-                
-                #Add item to library
-                self.addItemToLibrary(library, line, points)
-                
+                newLine = self.createCustomLine(points) #line is a group!
+                #add item everywhere
+                self.addItemEverywhere(scene, library, newLine, points)
             elif dialog.figure == Figures.CUBE:
                 pass
         else:
@@ -145,32 +144,13 @@ class EditorWidget(QWidget):
 
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
             points: list[QPointF] = dialog.points
-            newLine = self.updateCustomLine(self.currentObject, points)
-            #update info in library
-            self.replaceItemInLibrary(library, self.currentObject, newLine, points)
-            #redraw line at scene
-            scene.removeItem(self.currentObject)
-            self.currentObject = newLine
-            scene.addItem(newLine)
+            newLine = self.createCustomLine(points)
+            #replace item everywhere
+            self.replaceItemEverywhere(scene, library, self.currentObject, newLine, points)
                     
         if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
             #TODO
             pass       
-    def openRotateDialog(self, scene: QGraphicsScene, library: QListWidget):
-        if self.currentObject == None:
-            return
-        
-        #Check what figure does editor contain
-        items: list[QGraphicsItem] = self.currentObject.childItems()
-        figure = self.whatFigure(items)
-
-        dialog = RotateDialog(figure, self.currentObject)
-        result = dialog.exec()
-
-        if result == QDialog.DialogCode.Accepted:
-            #update text in widgetList element
-            self.setLibraryItemName(library, self.currentObject, "Line rotated ")
-        pass
     def operTranslateDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentObject == None:
             return
@@ -182,10 +162,17 @@ class EditorWidget(QWidget):
         dialog = TranslateDialog(figure, self.currentObject)
         result = dialog.exec()
 
-        if result == QDialog.DialogCode.Accepted:
-            self.setLibraryItemName(library, self.currentObject, "Line translated ")
-        pass
-    def operScaleDialog(self, scene: QGraphicsScene, library: QListWidget):
+        if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
+            #create new line based at points
+            points: list[QPointF] = dialog.points
+            newLine = self.createCustomLine(points)
+            #update info in library
+            self.replaceItemEverywhere(scene, library, self.currentObject, newLine, points)
+                    
+        if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
+            #TODO
+            pass
+    def openScaleDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentObject == None:
             return
         
@@ -197,23 +184,60 @@ class EditorWidget(QWidget):
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
-            self.setLibraryItemName(library, self.currentObject, f"Line scaled ")
-        pass
-    
-    def deleteCurrentObject(self, scene: QGraphicsScene, library: QListWidget):
-        #remove from library
-        listItems = library.findItems("", Qt.MatchFlag.MatchContains)
-        for i in range(len(listItems)):
-            data = listItems[i].data(Qt.ItemDataRole.UserRole)
-            if data["item"] == self.currentObject:
-                library.takeItem(i) #removing from the library
-                library.clearFocus()
-                break
-        #remove from scene
-        scene.removeItem(self.currentObject)
-        self.currentObject = None
-        pass
-    def setCurrentObjectByScene(self, scene: QGraphicsScene, library: QListWidget, item: QGraphicsItemGroup):
+            #create new line based at points
+            points: list[QPointF] = dialog.points
+            newLine = self.createCustomLine(points)
+            #replace item everywhere
+            self.replaceItemEverywhere(scene, library, self.currentObject, newLine, points)
+                    
+        if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
+            #TODO
+            pass  
+    def openRotateDialog(self, scene: QGraphicsScene, library: QListWidget):
+        if self.currentObject == None:
+            return
+        
+        #Check what figure does editor contain
+        items: list[QGraphicsItem] = self.currentObject.childItems()
+        figure = self.whatFigure(items)
+
+        dialog = RotateDialog(figure, self.currentObject)
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
+            #create new line based at points
+            points: list[QPointF] = dialog.points
+            newLine = self.createCustomLine(points)
+            #replace item everywhere
+            self.replaceItemEverywhere(scene, library, self.currentObject, newLine, points)
+                    
+        if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
+            #TODO
+            pass
+    def openMirrorDialog(self, scene: QGraphicsScene, library: QListWidget):
+        if self.currentObject == None:
+            return
+        
+        #Check what figure does editor contain
+        items: list[QGraphicsItem] = self.currentObject.childItems()
+        figure = self.whatFigure(items)
+
+        dialog = MirrorDialog(figure, self.currentObject)
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
+            #create new line based at points
+            points: list[QPointF] = dialog.points
+            newLine = self.createCustomLine(points)
+            #add item everywhere
+            self.paintDefault() #set old item color to default
+            self.addItemEverywhere(scene, library, newLine, points)
+                    
+        if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
+            #TODO
+            pass
+    #
+    def setCurrentItemByScene(self, scene: QGraphicsScene, library: QListWidget, item: QGraphicsItemGroup):
         if item == self.currentObject:
             print(f"setCurrentObjByScene: item({item}) == self.currentObj({self.currentObject})")
             return
@@ -235,7 +259,7 @@ class EditorWidget(QWidget):
         self.setFocusAtLibraryByItem(library, item)
 
         print(f"Current object {item}")
-    def setCurrentObjectByLibrary(self, scene: QGraphicsScene, library: QListWidget, listItem: QListWidgetItem):
+    def setCurrentItemByLibrary(self, scene: QGraphicsScene, library: QListWidget, listItem: QListWidgetItem):
         data = listItem.data(Qt.ItemDataRole.UserRole)
         item: QGraphicsItemGroup = data["item"]
         if item == self.currentObject:
@@ -254,7 +278,14 @@ class EditorWidget(QWidget):
         self.currentObject = item
         self.paintFocused()
         print(f"Current object {item}")   
-    
+    def setLibraryItemName(self, library: QListWidget, item: QGraphicsItemGroup, text: str):
+        #update text in widgetList element
+        listItems = library.findItems("", Qt.MatchFlag.MatchContains)
+        for it in listItems:
+            data = it.data(Qt.ItemDataRole.UserRole)
+            if data["item"] == item:
+                it.setText(f"{text} {data['item']}")
+            break
     def setFocusAtLibraryByItem(self, library: QListWidget, item: QGraphicsItemGroup):
         print(item)
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
@@ -265,6 +296,7 @@ class EditorWidget(QWidget):
                 library.setCurrentItem(it)
                 library.setFocus()
                 break
+    #Scene addition sets the focus!
     def addItemToLibrary(self, library: QListWidget, item: QGraphicsItemGroup, points: list[QPointF]):
         data = {
                     "item": item,
@@ -273,36 +305,65 @@ class EditorWidget(QWidget):
         item = QListWidgetItem(f"Item: {item}")
         item.setData(Qt.ItemDataRole.UserRole, data)
         library.addItem(item)
+        self.setFocusAtLibraryByItem(library, item)
+    def addItemToScene(self, scene: QGraphicsScene, item: QGraphicsItemGroup):
+        scene.addItem(item)
+        self.currentObject = item; self.paintFocused()
+        pass
+    def addItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, item: QGraphicsItemGroup, points: list[QPointF]):
+        #add to library
+        self.addItemToLibrary(library, item, points)
+        #add to scene
+        self.addItemToScene(scene, item)
+        pass
+    #Scene replacement sets the focus!
     def replaceItemInLibrary(self, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
         for it in listItems:
             data = it.data(Qt.ItemDataRole.UserRole)
             if data["item"] == oldItem:
-                it.setText(f"Line updated {data['item']}")
+                self.setLibraryItemName(library, oldItem, it.text())
                 data["item"] = newItem
                 data["points"] = points
                 it.setData(Qt.ItemDataRole.UserRole, data)
                 break
-    def setLibraryItemName(self, library: QListWidget, item: QGraphicsItemGroup, text: str):
-        #update text in widgetList element
+        self.setFocusAtLibraryByItem(library, newItem)
+    def replaceItemInScene(self, scene: QGraphicsScene, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup):
+        scene.removeItem(oldItem)
+        self.currentObject = newItem; self.paintFocused()
+        scene.addItem(newItem)
+        pass
+    def replaceItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
+        #replace in library
+        self.replaceItemInLibrary(library, oldItem, newItem, points)
+        #redraw line at scene
+        self.replaceItemInScene(scene, oldItem, newItem)
+        pass
+    #Scene deletion sets the focus!
+    def deleteCurrentItemFromScene(self, scene: QGraphicsScene):
+        scene.removeItem(self.currentObject)
+        self.currentObject = None
+    def deleteCurrentItemFromLibrary(self, library: QListWidget):
+        #remove from library
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
-        for it in listItems:
-            data = it.data(Qt.ItemDataRole.UserRole)
-            if data["item"] == item:
-                it.setText(f"{text} {data['item']}")
-            break
-    
+        for i in range(len(listItems)):
+            data = listItems[i].data(Qt.ItemDataRole.UserRole)
+            if data["item"] == self.currentObject:
+                library.takeItem(i) #removing from the library
+                library.clearFocus()
+                break
+    def deleteCurrentItem(self, scene: QGraphicsScene, library: QListWidget):
+        #delete from library
+        self.deleteCurrentItemFromLibrary(library)
+        #delete from scene
+        self.deleteCurrentItemFromScene(scene)
+        pass
+    #Additional methods to update lines
     def createCustomLine(self, points: list[QPointF]):
         pointStart = QGraphicsEllipseItem(points[0].x()-5, points[0].y()-5, 10, 10)
         pointEnd = QGraphicsEllipseItem(points[1].x()-5, points[1].y()-5, 10, 10)
         line = QGraphicsLineItem(QLineF(points[0], points[1]))
         group = QGraphicsItemGroup(); group.addToGroup(pointStart); group.addToGroup(pointEnd); group.addToGroup(line)
-        return group
-    def updateCustomLine(self, line: QGraphicsItemGroup, points: list[QPointF]):
-        pointStart: QGraphicsEllipseItem = line.childItems()[0];  pointStart.setRect(points[0].x()-5, points[0].y()-5, 10, 10)
-        pointEnd: QGraphicsEllipseItem = line.childItems()[1]; pointEnd.setRect(points[1].x()-5, points[1].y()-5, 10, 10)
-        lineItem: QGraphicsLineItem = line.childItems()[2]; lineItem.setLine(QLineF(points[0], points[1]));
-        group = QGraphicsItemGroup(); group.addToGroup(pointStart); group.addToGroup(pointEnd); group.addToGroup(lineItem)
         return group
     def whatFigure(self, items):
         if items == None:

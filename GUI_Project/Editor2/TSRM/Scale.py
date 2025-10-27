@@ -1,4 +1,5 @@
 from FIGURES import Figures
+from TSRM.Additional import AdditionalDialogMethods
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
@@ -7,22 +8,24 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QGridLayout,
     QVBoxLayout,
+    QGraphicsScene,
     QGraphicsLineItem,
-    QGraphicsItemGroup
+    QGraphicsItemGroup,
+    QGraphicsEllipseItem
 )
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QTransform
 
-class ScaleDialog(QDialog):
+class ScaleDialog(QDialog, AdditionalDialogMethods):
 
-    def __init__(self, figure: Figures, lineItem: QGraphicsItemGroup):
+    def __init__(self, figure: Figures, groupItem: QGraphicsItemGroup):
         super().__init__()
         self.initUI(figure)
         self.setWindowTitle("ScaleDialog"); self.setFixedSize(480, 320)
         self.setObjectName("ScaleDialog")
 
-        self.line = lineItem
-        self.points: list[QPointF] = []
+        self.groupItem = groupItem
+        self.points: list[QPointF] = self.getPoints(groupItem)
     
     def initUI(self, figure: Figures):
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -51,15 +54,21 @@ class ScaleDialog(QDialog):
     
     #Slots
     def scaleLine(self, scaleX, scaleY):
-        #get line from group
-        items = self.line.childItems()
-        lineItem = None
-        for it in items:
-            if isinstance(it, QGraphicsLineItem):
-                lineItem = it
-                break
-        #get points and scale them
-        startPoint = lineItem.line().p1(); startPoint.setX(startPoint.x()*scaleX); startPoint(startPoint.y()*scaleY)
-        endPoint = lineItem.line().p2(); endPoint.setX(endPoint.x()*scaleX); endPoint(endPoint.y()*scaleY)
-        self.Points = [startPoint, endPoint]
+        #get lineItem from group
+        lineItem = self.getLineItemFromGroup(self.groupItem)
+        #points of line
+        startPoint_GLOBAL = lineItem.line().p1()
+        centerPoint_GLOBAL = lineItem.line().center()
+        endPoint_GLOBAL = lineItem.line().p2()
+        #transformations for points (reverse motion)
+        transform = QTransform()
+        transform.translate(centerPoint_GLOBAL.x(), centerPoint_GLOBAL.y())
+        transform.scale(scaleX, scaleY)
+        transform.translate(centerPoint_GLOBAL.x() * -1, centerPoint_GLOBAL.y() * -1)
+        #apply transformations
+        startPoint = transform.map(startPoint_GLOBAL)
+        endPoint = transform.map(endPoint_GLOBAL)
+        self.points = [startPoint, endPoint]
         self.accept()
+    
+                
