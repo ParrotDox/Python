@@ -1,4 +1,5 @@
-from FIGURES import Figures
+from EditorEnum import Figures
+from CustomClasses import QGraphicsLineGroup, QGraphicsCubeGroup, QGraphicsMixedGroup
 from TSRM.Additional import AdditionalDialogMethods
 from PySide6.QtWidgets import (
     QDialog,
@@ -13,6 +14,11 @@ from PySide6.QtWidgets import (
     QGraphicsItemGroup,
     QGraphicsEllipseItem
 )
+from CustomClasses import (
+    QGraphicsLineGroup, 
+    QGraphicsCubeGroup, 
+    QGraphicsPointGroup,
+    QGraphicsMixedGroup)
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QTransform
 
@@ -29,13 +35,12 @@ class MirrorDialog(QDialog, AdditionalDialogMethods):
         self.items: QGraphicsItemGroup = []
     
     def initUI(self, figure: Figures):
-        mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         #widgets
         mirrorer_X = QCheckBox("Mirror X")
         mirrorer_Y = QCheckBox("Mirror Y")
         confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.MirrorItem(mirrorer_X.isChecked(), mirrorer_Y.isChecked(), figure))
         #layout
-        mainLayout = QVBoxLayout()
+        mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         mainLayout.addWidget(mirrorer_X)
         mainLayout.addWidget(mirrorer_Y)
         mainLayout.addWidget(confirm_2D)

@@ -1,4 +1,4 @@
-from FIGURES import Figures
+from EditorEnum import Figures
 from TSRM.Additional import AdditionalDialogMethods
 from PySide6.QtWidgets import (
     QDialog,
@@ -35,7 +35,6 @@ class ScaleDialog(QDialog, AdditionalDialogMethods):
             scaler_Y = QDoubleSpinBox(minimum=0.1, maximum=10.0)
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.scaleLine(scaler_X.value(), scaler_Y.value()))
             #layout
-            mainLayout = QVBoxLayout()
             mainLayout.addWidget(scaler_X)
             mainLayout.addWidget(scaler_Y)
             mainLayout.addWidget(confirm_2D)
@@ -44,7 +43,6 @@ class ScaleDialog(QDialog, AdditionalDialogMethods):
             scalerX = QDoubleSpinBox(minimum=-360, maximum=360)
             confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
             #layout
-            mainLayout = QVBoxLayout()
             mainLayout.addWidget(scalerX)
             mainLayout.addWidget(confirm_3D)
 

@@ -1,4 +1,5 @@
-from FIGURES import Figures
+from CustomClasses import QGraphicsLineGroup, QGraphicsCubeGroup, QGraphicsMixedGroup
+from EditorEnum import Figures
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
@@ -35,8 +36,8 @@ class CreateDialog(QDialog):
         creator3D = QWidget()
         confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
 
-        tab.addTab(creator2D, "2D")
-        tab.addTab(creator3D, "3D")
+        tab.addTab(creator2D, "Line")
+        tab.addTab(creator3D, "Cube")
         #Layouts
         mainLayout = QVBoxLayout()
 

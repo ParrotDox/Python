@@ -1,4 +1,4 @@
-from FIGURES import Figures
+from EditorEnum import Figures
 from TSRM.Additional import AdditionalDialogMethods
 from PySide6.QtWidgets import (
     QDialog,
@@ -33,7 +33,6 @@ class RotateDialog(QDialog, AdditionalDialogMethods):
             rotator = QSpinBox(minimum=-360, maximum=360)
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.rotateLine(rotator.value()))
             #layout
-            mainLayout = QVBoxLayout()
             mainLayout.addWidget(rotator)
             mainLayout.addWidget(confirm_2D)
         elif figure == Figures.CUBE:
@@ -43,7 +42,6 @@ class RotateDialog(QDialog, AdditionalDialogMethods):
             rotatorZ = QSpinBox(minimum=-360, maximum=360)
             confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
             #layout
-            mainLayout = QVBoxLayout()
             mainLayout.addWidget(rotatorX)
             mainLayout.addWidget(rotatorY)
             mainLayout.addWidget(rotatorZ)

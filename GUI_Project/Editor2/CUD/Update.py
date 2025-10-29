@@ -1,4 +1,4 @@
-from FIGURES import Figures
+from EditorEnum import Figures
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,

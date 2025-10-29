@@ -1,4 +1,4 @@
-from FIGURES import Figures
+from EditorEnum import Figures
 from TSRM.Additional import AdditionalDialogMethods
 from PySide6.QtWidgets import (
     QDialog,
@@ -33,7 +33,6 @@ class TranslateDialog(QDialog, AdditionalDialogMethods):
             translator_Y = QSpinBox(minimum=-10000, maximum=10000)
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.translateLine(translator_X.value(), translator_Y.value()))
             #layout
-            mainLayout = QVBoxLayout()
             mainLayout.addWidget(translator_X)
             mainLayout.addWidget(translator_Y)
             mainLayout.addWidget(confirm_2D)
@@ -44,7 +43,6 @@ class TranslateDialog(QDialog, AdditionalDialogMethods):
             rotatorZ = QSpinBox(minimum=-360, maximum=360)
             confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
             #layout
-            mainLayout = QVBoxLayout()
             mainLayout.addWidget(rotatorX)
             mainLayout.addWidget(rotatorY)
             mainLayout.addWidget(rotatorZ)

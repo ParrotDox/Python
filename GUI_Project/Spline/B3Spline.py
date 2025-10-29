@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem)
 from PySide6.QtGui import QColor,QPen, QBrush, QTransform
 
-scale = 50
+scale = 73
 
 class point:
     def __init__(self, x, y):
