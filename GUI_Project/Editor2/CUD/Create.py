@@ -34,6 +34,7 @@ class CreateDialog(QDialog):
         confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.setPoints(x1_2D.value(), x2_2D.value(), y1_2D.value(), y2_2D.value()))
 
         creator3D = QWidget()
+        
         confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
 
         tab.addTab(creator2D, "Line")

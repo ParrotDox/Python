@@ -24,21 +24,22 @@ from PySide6.QtGui import QTransform
 
 class MirrorDialog(QDialog, AdditionalDialogMethods):
 
-    def __init__(self, figure: Figures, groupItem: QGraphicsItemGroup):
+    def __init__(self, figure: Figures, groupItem: QGraphicsItemGroup, points: list[QPointF]):
         super().__init__()
-        self.initUI(figure)
+        self.initUI()
         self.setWindowTitle("MirrorDialog"); self.setFixedSize(480, 320)
         self.setObjectName("MirrorDialog")
 
+        self.figure = figure
         self.groupItem = groupItem
-        self.points: list[QPointF] = self.getPoints(groupItem)
+        self.points: list[QPointF] = points #At start: raw, at result: mirrored
         self.items: QGraphicsItemGroup = []
     
-    def initUI(self, figure: Figures):
+    def initUI(self):
         #widgets
         mirrorer_X = QCheckBox("Mirror X")
         mirrorer_Y = QCheckBox("Mirror Y")
-        confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.MirrorItem(mirrorer_X.isChecked(), mirrorer_Y.isChecked(), figure))
+        confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.MirrorItem(self.figure, self.points, mirrorer_X.isChecked(), mirrorer_Y.isChecked()))
         #layout
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         mainLayout.addWidget(mirrorer_X)
@@ -50,14 +51,11 @@ class MirrorDialog(QDialog, AdditionalDialogMethods):
         pass
     
     #Slots
-    def MirrorItem(self, mirrorX, mirrorY, figure: Figures):
+    def MirrorItem(self, figure: Figures, points: list[QPointF], mirrorX, mirrorY):
         if figure == Figures.LINE:
-            #get lineItem from group
-            lineItem = self.getLineItemFromGroup(self.groupItem)
             #points of line
-            startPoint_GLOBAL = lineItem.line().p1()
-            centerPoint_GLOBAL = lineItem.line().center()
-            endPoint_GLOBAL = lineItem.line().p2()
+            startPoint_GLOBAL = points[0]
+            endPoint_GLOBAL = points[1]
             #transformations for points (reverse motion)
             transform = QTransform()
             if mirrorX and not mirrorY: #transformation X

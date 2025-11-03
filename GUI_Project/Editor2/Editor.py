@@ -7,12 +7,14 @@ from TSRM.Rotate import RotateDialog
 from TSRM.Mirror import MirrorDialog
 from EditorEnum import Figures, SelectModes
 from CustomClasses import (
+    QGraphicsCustomScene,
     QOneWayToggleButton,
+    QGraphicsCustomItemGroup,
     QGraphicsLineGroup, 
     QGraphicsCubeGroup, 
     QGraphicsPointGroup,
     QGraphicsMixedGroup, 
-    QGraphicsViewCustom)
+    QGraphicsCustomView)
 from PySide6.QtWidgets import (
     QWidget,
     QPushButton,
@@ -29,26 +31,39 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsItemGroup
 )
-from PySide6.QtCore import Qt, QLineF, QPointF
+from PySide6.QtCore import Qt, QLineF, QPointF, QPoint, QRect
 from PySide6.QtGui import QPen, QBrush, QColor, QIcon, QPixmap
 
 class EditorWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.initUI()
-        self.setWindowTitle("Editor"); self.setFixedSize(1280, 720)
-        self.setObjectName("Editor")
 
         #SelectMode
         self.selectMode: SelectModes = SelectModes.LINE
 
         #Colors
-        self.currentPen: QPen = None
-        self.currentBrush: QBrush = None
-        self.currentGroup: QGraphicsItemGroup = None
-        self.currentItem: QGraphicsItem = None #Can be point or group
+        self.defaultPen: QPen       = None
+        self.defaultBrush: QBrush   = None
+        self.focusedPen: QPen       = None
+        self.focusedBrush: QBrush   = None
+        self.preparedPen:QPen       = None
+        self.preparedBrush: QBrush  = None
         self.initColors()
+
+        #Current selection
+        self.currentGroup: QGraphicsCustomItemGroup = None
+        self.currentItem: QGraphicsItem = None #Can be point or group
+
+        #Current scale
+        self.scaleFactor = 50
+
+        self.initUI()
+        self.setWindowTitle("Editor"); self.setFixedSize(1280, 720)
+        self.setObjectName("Editor")
+
+        
+        
 
     def initUI(self):
         #widgets
@@ -65,9 +80,13 @@ class EditorWidget(QWidget):
         buttonLine = QOneWayToggleButton(self.createIcon("Icons/line.png", 35, 35), ""); buttonLine.setFixedSize(35,35); buttonLine.pressed.connect(lambda:self.setSelectMode(selectModeButtons, SelectModes.LINE)); buttonLine.setCheckable(True); buttonLine.setChecked(True)
         selectModeButtons = [buttonPoint, buttonLine]
 
-        scene = QGraphicsScene(); scene.setSceneRect(-1000,-1000,2000,2000)
-        view = QGraphicsViewCustom(scene); view.itemFocused.connect(lambda scene, filteredGroups, point: self.setCurrentItemByScene(scene, library, filteredGroups, point))
-
+        scene = QGraphicsCustomScene(QRect(-1000,-1000,2000,2000), self.scaleFactor, self.defaultPen, self.defaultPen)
+        view = QGraphicsCustomView(scene)
+        view.itemFocused.connect(lambda scene, filteredGroups, point: self.setCurrentItemByCSM(scene, library, filteredGroups, point))
+        view.itemFocusedToGroup.connect(lambda scene, filteredGroups, point: self.prepareToGroup(scene, library, filteredGroups, point))
+        view.itemMoved.connect(lambda leftMousePos, delta: self.moveItemsAtScene(scene, library, view, leftMousePos, delta))
+        view.scaleFactorChanged.connect(lambda deltaY: self.redrawEverything(scene, library, self.scaleFactor, deltaY, self.currentPen, self.currentPen))
+        
         objectsLabel = QLabel("Objects")
         library = QListWidget(); library.itemClicked.connect(lambda item: self.setCurrentItemByLibrary(scene, library, item))
 
@@ -108,24 +127,26 @@ class EditorWidget(QWidget):
         pass
     #Colors
     def initColors(self):
-        self.currentPen = QPen(); self.currentBrush = QBrush()
-        pen = self.currentPen
-        brush = self.currentBrush
-        pen.setColor(QColor(20, 20, 20)); pen.setWidth(3); pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        brush.setColor(QColor(50, 50, 50))
-    def paintDefault(self, item: QGraphicsItem): #item is a group or item
-        items: list[QGraphicsItem] = self.getAllChildItems(item)
-        for it in items:
-            if isinstance(it, QGraphicsEllipseItem):
-                ellipse: QGraphicsEllipseItem = it
-                ellipse.setBrush(self.currentBrush)
-                ellipse.setPen(self.currentPen)
-            elif isinstance(it, QGraphicsLineItem):
-                line: QGraphicsLineItem = it
-                line.setPen(self.currentPen)
-    def paintFocused(self, item: QGraphicsItem): #item is a group or item
-        brush = QBrush(QColor(220, 0, 0))
-        pen = QPen(QColor(220, 0, 0)); pen.setWidth(3); pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        self.defaultPen = QPen(); self.defaultBrush = QBrush()
+        self.focusedPen = QPen(); self.focusedBrush = QBrush()
+        self.preparedPen = QPen(); self.preparedBrush = QBrush()
+
+        self.defaultPen.setColor(QColor(20, 20, 20))
+        self.defaultPen.setWidth(2)
+        self.defaultPen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        self.defaultBrush.setColor(QColor(50, 50, 50))
+
+        self.focusedPen.setColor(QColor(220, 0, 0))
+        self.focusedPen.setWidth(3)
+        self.focusedPen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        self.focusedBrush.setColor(QColor(220, 0, 0))
+
+        self.preparedPen.setColor(QColor(0, 200, 0))
+        self.preparedPen.setWidth(3)
+        self.preparedPen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        self.preparedBrush.setColor(QColor(0, 200, 0))
+
+    def paintItem(self, item: QGraphicsItem, pen: QPen, brush: QBrush):
         items: list[QGraphicsItem] = self.getAllChildItems(item)
         for it in items:
             if isinstance(it, QGraphicsEllipseItem):
@@ -135,11 +156,10 @@ class EditorWidget(QWidget):
             elif isinstance(it, QGraphicsLineItem):
                 line: QGraphicsLineItem = it
                 line.setPen(pen)
-        pass
     #Icons
-    def createIcon(self, path: str, w: int, h: int):
+    def createIcon(self, picPath: str, w: int, h: int):
         absPath = os.path.dirname(os.path.abspath(__file__))
-        iconPath = os.path.join(absPath, *path.split("/"))
+        iconPath = os.path.join(absPath, *picPath.split("/"))
         pixmap = QPixmap(iconPath); pixmap = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         icon = QIcon(pixmap)
         return icon
@@ -169,9 +189,12 @@ class EditorWidget(QWidget):
 
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
             points: list[QPointF] = dialog.points
-            newLine = self.createCustomLine(points)
+            newItem = self.createCustomLine(points)
             #replace item everywhere
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newLine, points)
+            self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, points)
+            #set focus
+            self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
+
                     
         if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
             #TODO
@@ -183,15 +206,17 @@ class EditorWidget(QWidget):
         #Check what figure does editor contain
         figure = self.whatFigure(self.currentGroup)
 
-        dialog = TranslateDialog(figure, self.currentGroup)
+        dialog = TranslateDialog(figure, self.currentGroup, self.currentGroup.points)
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
             #create new line based at points
             points: list[QPointF] = dialog.points
-            newLine = self.createCustomLine(points)
+            newItem = self.createCustomLine(points)
             #update info in library
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newLine, points)
+            self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, points)
+            #setFocus
+            self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
                     
         if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
             #TODO
@@ -203,15 +228,17 @@ class EditorWidget(QWidget):
         #Check what figure does editor contain
         figure = self.whatFigure(self.currentGroup)
 
-        dialog = ScaleDialog(figure, self.currentGroup)
+        dialog = ScaleDialog(figure, self.currentGroup, self.currentGroup.points)
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
             #create new line based at points
             points: list[QPointF] = dialog.points
-            newLine = self.createCustomLine(points)
+            newItem = self.createCustomLine(points)
             #replace item everywhere
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newLine, points)
+            self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, points)
+            #setFocus
+            self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
                     
         if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
             #TODO
@@ -223,15 +250,17 @@ class EditorWidget(QWidget):
         #Check what figure does editor contain
         figure = self.whatFigure(self.currentGroup)
 
-        dialog = RotateDialog(figure, self.currentGroup)
+        dialog = RotateDialog(figure, self.currentGroup, self.currentGroup.points)
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
             #create new line based at points
             points: list[QPointF] = dialog.points
-            newLine = self.createCustomLine(points)
+            newItem = self.createCustomLine(points)
             #replace item everywhere
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newLine, points)
+            self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, points)
+            #setFocus
+            self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
                     
         if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
             #TODO
@@ -243,15 +272,15 @@ class EditorWidget(QWidget):
         #Check what figure does editor contain
         figure = self.whatFigure(self.currentGroup)
 
-        dialog = MirrorDialog(figure, self.currentGroup)
+        dialog = MirrorDialog(figure, self.currentGroup, self.currentGroup.points)
         result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
             #create new line based at points
             points: list[QPointF] = dialog.points
-            newLine = self.createCustomLine(points)
+            newItem = self.createCustomLine(points)
             #add item everywhere
-            self.addItemEverywhere(scene, library, newLine, points)
+            self.addItemEverywhere(scene, library, newItem, points)
                     
         if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
             #TODO
@@ -263,7 +292,9 @@ class EditorWidget(QWidget):
             buttons[1].setChecked(False)
         elif mode == SelectModes.LINE:
             buttons[0].setChecked(False)
-    def setCurrentItemByScene(self, scene: QGraphicsScene, library: QListWidget, filteredGroups: list[QGraphicsItemGroup], point: QPointF):
+    def setCurrentItemByCSM(self, scene: QGraphicsScene, library: QListWidget, filteredGroups: list[QGraphicsItemGroup], point: QPointF):
+        '''Method to focus at scene by given objects and selected SelecMode'''
+        print(filteredGroups)
         currentGroup = None
         currentItem = None
         if self.selectMode == SelectModes.POINT:
@@ -272,20 +303,20 @@ class EditorWidget(QWidget):
             if currentItem is None and self.currentGroup is None:
                 return
             elif currentItem is None and self.currentGroup is not None:
-                self.paintDefault(self.currentItem)
+                self.paintItem(self.currentItem, self.defaultPen, self.defaultBrush)
                 self.currentGroup = None
                 self.currentItem = None
                 library.clearFocus()
             elif currentItem is not None and self.currentGroup is None:
                 self.currentGroup = currentGroup
                 self.currentItem = currentItem
-                self.paintFocused(currentItem)
+                self.paintItem(self.currentItem, self.focusedPen, self.focusedBrush)
                 self.setFocusAtLibraryByItem(library, currentGroup)
             elif currentItem is not None and self.currentGroup is not None:
-                self.paintDefault(self.currentGroup)
+                self.paintItem(self.currentGroup, self.defaultPen, self.defaultBrush)
                 self.currentGroup = currentGroup
                 self.currentItem = currentItem
-                self.paintFocused(currentItem)
+                self.paintItem(self.currentItem, self.focusedPen, self.focusedBrush)
                 self.setFocusAtLibraryByItem(library, currentGroup)
         elif self.selectMode == SelectModes.LINE:
             currentItem = self.selectFromGroups(filteredGroups, QGraphicsLineGroup)
@@ -293,24 +324,24 @@ class EditorWidget(QWidget):
             if currentItem is None and self.currentGroup is None:
                 return
             elif currentItem is None and self.currentGroup is not None:
-                self.paintDefault(self.currentGroup)
+                self.paintItem(self.currentGroup, self.defaultPen, self.defaultBrush)
                 self.currentGroup = None
                 self.currentItem = None
                 library.clearFocus()
             elif currentItem is not None and self.currentGroup is None:
                 self.currentGroup = currentGroup
                 self.currentItem = currentItem
-                self.paintFocused(currentGroup)
+                self.paintItem(self.currentGroup, self.focusedPen, self.focusedBrush)
                 self.setFocusAtLibraryByItem(library, currentGroup)
             elif currentItem is not None and self.currentGroup is not None:
-                self.paintDefault(self.currentGroup)
+                self.paintItem(self.currentGroup, self.defaultPen, self.defaultBrush)
                 self.currentGroup = currentGroup
                 self.currentItem = currentItem
-                self.paintFocused(currentItem)
+                self.paintItem(self.currentItem, self.focusedPen, self.focusedBrush)
                 self.setFocusAtLibraryByItem(library, currentGroup)
-        print(f"setCurrentItemByScene has these groups {filteredGroups}")
-        print(f"setCurrentItemByScene currentGroup is {currentGroup}")
-        print(f"setCurrentItemByScene currentItem is {currentItem}")
+        #print(f"setCurrentItemByCSM has these groups {filteredGroups}")
+        print(f"setCurrentItemByCSM currentGroup is {currentGroup}")
+        print(f"setCurrentItemByCSM currentItem is {currentItem}")
     def setCurrentItemByLibrary(self, scene: QGraphicsScene, library: QListWidget, listItem: QListWidgetItem):
         data = listItem.data(Qt.ItemDataRole.UserRole)
         item: QGraphicsItemGroup = data["item"]
@@ -318,17 +349,16 @@ class EditorWidget(QWidget):
             return
         if item == None:
             if self.currentGroup != None:
-                self.paintDefault()
                 self.currentGroup = None
                 library.clearFocus()
                 return
             else:
                 return
         if self.currentGroup != None:
-            self.paintDefault(self.currentGroup)
+            self.paintItem(self.currentGroup, self.defaultPen, self.defaultBrush)
         
         self.currentGroup = item
-        self.paintFocused(self.currentGroup)
+        self.paintItem(self.currentGroup, self.focusedPen, self.focusedBrush)
         print(f"Current item {item}")   
     def setLibraryItemName(self, library: QListWidget, item: QGraphicsItemGroup, text: str):
         #update text in widgetList element
@@ -347,7 +377,7 @@ class EditorWidget(QWidget):
                 library.setFocus()
                 print(f"Library focus set at {it}")
                 break
-    #Scene addition sets the focus!
+    #Adders
     def addItemToLibrary(self, library: QListWidget, item: QGraphicsItemGroup, points: list[QPointF]):
         data = {
                     "item": item,
@@ -365,13 +395,13 @@ class EditorWidget(QWidget):
         #add to scene
         self.addItemToScene(scene, item)
         pass
-    #Scene replacement sets the focus!
+    #Replacers
     def replaceItemInLibrary(self, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
         for it in listItems:
             data = it.data(Qt.ItemDataRole.UserRole)
             if data["item"] == oldItem:
-                self.setLibraryItemName(library, oldItem, it.text())
+                self.setLibraryItemName(library, oldItem, "")
                 data["item"] = newItem
                 data["points"] = points
                 it.setData(Qt.ItemDataRole.UserRole, data)
@@ -379,7 +409,6 @@ class EditorWidget(QWidget):
         self.setFocusAtLibraryByItem(library, newItem)
     def replaceItemInScene(self, scene: QGraphicsScene, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup):
         scene.removeItem(oldItem)
-        self.currentGroup = newItem; self.paintFocused(newItem)
         scene.addItem(newItem)
         pass
     def replaceItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
@@ -388,7 +417,50 @@ class EditorWidget(QWidget):
         #redraw line at scene
         self.replaceItemInScene(scene, oldItem, newItem)
         pass
-    #Scene deletion sets the focus!
+    def moveItemsAtScene(self, scene: QGraphicsScene, library: QListWidget, view: QGraphicsView, leftMousePos: QPoint, delta: QPointF):
+        if self.currentItem == None:
+            return
+        else:
+            if isinstance(self.currentItem, QGraphicsPointGroup) and self.selectMode == SelectModes.POINT:
+                '''Update points'''
+                oldItem = self.currentItem #QGPointGroup
+                oldGroup = self.currentGroup #QGLineGroup
+                old_points = oldGroup.points
+                new_points: list[QPointF] = []
+                new_point: QPointF = None   #New point for deconstruction part
+                for pt in old_points:
+                    if pt == oldItem.points[0]:
+                        point = pt + delta/self.scaleFactor
+                        new_points.append(point)
+                        new_point = point
+                    else:
+                        new_points.append(pt)
+                '''Create and replace old item'''
+                newItem = self.createCustomLine(new_points)
+                self.replaceItemEverywhere(scene, library, oldGroup, newItem, new_points)
+                '''Deconstruct item to get current PointGroup'''
+                currentPointItem: QGraphicsPointGroup = None
+                for chld in newItem.childItems():
+                    if isinstance(chld, QGraphicsPointGroup):
+                        if chld.points[0] == new_point:
+                            print("EQUAL")
+                            currentPointItem = chld
+                            break
+
+                #set focus
+                self.setCurrentItemByCSM(scene, library, [newItem, currentPointItem], QPointF())
+                pass
+            elif isinstance(self.currentItem, QGraphicsLineGroup) and self.selectMode == SelectModes.LINE:
+                '''Update points'''
+                oldItem = self.currentItem  #QGLineGroup
+                old_points: list[QPointF] = oldItem.points
+                new_points = [old_points[0] + delta/self.scaleFactor, old_points[1] + delta/self.scaleFactor]
+                '''Create and replace old item'''
+                newItem = self.createCustomLine(new_points)
+                self.replaceItemEverywhere(scene, library, oldItem, newItem, new_points)
+                #set focus
+                self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
+    #Deletors: Scene deletion sets the focus!
     def deleteCurrentItemFromScene(self, scene: QGraphicsScene):
         scene.removeItem(self.currentGroup)
         self.currentGroup = None
@@ -408,14 +480,66 @@ class EditorWidget(QWidget):
         #delete from scene
         self.deleteCurrentItemFromScene(scene)
         pass
+    #Redraw methods for scaling
+    def redrawGrid(self, scene: QGraphicsCustomScene, scaleFactor: float, defaultPen: QPen, crossPen: QPen):
+        scene.scaleFactor = scaleFactor
+        scene.defaultPen = defaultPen
+        scene.crossPen = crossPen
+        scene.update()
+    def redrawItems(self, scene: QGraphicsCustomScene, library: QListWidget):
+        sceneItems = scene.items()
+        currentFocusedItem = self.currentGroup #Memorize focused object
+        for it in sceneItems:
+            if isinstance(it, QGraphicsMixedGroup):
+                pass
+            elif isinstance(it, QGraphicsLineGroup):
+                '''Create new item and replace old everywhere'''
+                oldItem: QGraphicsLineGroup = it
+                points = oldItem.points
+                newItem = self.createCustomLine(points)
+                self.replaceItemEverywhere(scene, library, oldItem, newItem, points)
+                '''Replace old focused object to new'''
+                if currentFocusedItem == it:
+                    currentFocusedItem = newItem 
+        
+        #set focus from old to new item
+        self.setCurrentItemByCSM(scene, library, [currentFocusedItem], QPointF())
+    def redrawEverything(self, scene: QGraphicsCustomScene, library: QListWidget, scaleFactor: float, deltaY: float, defaultPen: QPen, crossPen: QPen):
+        if deltaY > 0:
+            self.scaleFactor = scaleFactor * 1.1
+        elif deltaY < 0:
+            self.scaleFactor = scaleFactor * 0.9
+        self.redrawGrid(scene, self.scaleFactor, defaultPen, crossPen)
+        self.redrawItems(scene, library)
+    #Group
+    def prepareToGroup(self, scene: QGraphicsScene, library: QListWidget, filteredGroups: list[QGraphicsItemGroup], point: QPointF):
+
+        pass
     #Additional methods
     def createCustomLine(self, points: list[QPointF]):
-        pointStart = QGraphicsEllipseItem(points[0].x()-5, points[0].y()-5, 10, 10); pointStartGroup = QGraphicsPointGroup(); pointStartGroup.addToGroup(pointStart)
-        pointEnd = QGraphicsEllipseItem(points[1].x()-5, points[1].y()-5, 10, 10); pointEndGroup = QGraphicsPointGroup(); pointEndGroup.addToGroup(pointEnd)
-        line = QGraphicsLineItem(QLineF(points[0], points[1]))
-        group = QGraphicsLineGroup(); group.addToGroup(pointStartGroup); group.addToGroup(pointEndGroup); group.addToGroup(line)
+        #All points for drawing scaled by scaleFactor!
+        '''Line points to draw a line'''
+        linePStart = QPointF(points[0].x()*self.scaleFactor, points[0].y()*self.scaleFactor) #Start point for line
+        linePEnd = QPointF(points[1].x()*self.scaleFactor, points[1].y()*self.scaleFactor) #End point for line
+        '''Start point item for ellipse of line'''
+        ellipseStart = QGraphicsEllipseItem(linePStart.x()-5, linePStart.y()-5, 10, 10)
+        pointStartGroup = QGraphicsPointGroup(); pointStartGroup.points = [points[0]]
+        pointStartGroup.addToGroup(ellipseStart)
+        '''End point item for ellipse of line'''
+        ellipseEnd = QGraphicsEllipseItem(linePEnd.x()-5, linePEnd.y()-5, 10, 10)
+        pointEndGroup = QGraphicsPointGroup(); pointEndGroup.points = [points[1]]
+        pointEndGroup.addToGroup(ellipseEnd)
+        '''Line item and group gathering'''
+        lineItem = QGraphicsLineItem(QLineF(linePStart, linePEnd))
+        group = QGraphicsLineGroup()
+        group.addToGroup(pointStartGroup); group.addToGroup(pointEndGroup); group.addToGroup(lineItem)
+        '''Metainfo about group'''
+        group.scaleFactor = self.scaleFactor
+        group.points = points
+        group.baseChildItems = ellipseStart, ellipseEnd, lineItem
         return group
     def getAllChildItems(self, item: QGraphicsItem):
+        '''Unpack group items'''
         all_items = []
         if not isinstance(item, QGraphicsItemGroup):
             return []
@@ -427,7 +551,6 @@ class EditorWidget(QWidget):
                 else:
                     all_items.extend(self.getAllChildItems(chld))
         return all_items
-
     def selectFromGroups(self, groups: list[QGraphicsItemGroup], class_type):
         for gr in groups:
             if isinstance(gr, class_type):

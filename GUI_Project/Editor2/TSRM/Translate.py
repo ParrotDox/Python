@@ -16,14 +16,15 @@ from PySide6.QtGui import QTransform
 
 class TranslateDialog(QDialog, AdditionalDialogMethods):
 
-    def __init__(self, figure: Figures, groupItem: QGraphicsItemGroup):
+    def __init__(self, figure: Figures, groupItem: QGraphicsItemGroup, points: list[QPointF]):
         super().__init__()
         self.initUI(figure)
         self.setWindowTitle("TranslateDialog"); self.setFixedSize(480, 320)
         self.setObjectName("TranslateDialog")
 
+        self.figure = figure
         self.groupItem = groupItem
-        self.points: list[QPointF] = self.getPoints(groupItem)
+        self.points: list[QPointF] = points
     
     def initUI(self, figure: Figures):
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -31,7 +32,7 @@ class TranslateDialog(QDialog, AdditionalDialogMethods):
             #widgets
             translator_X = QSpinBox(minimum=-10000, maximum=10000)
             translator_Y = QSpinBox(minimum=-10000, maximum=10000)
-            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.translateLine(translator_X.value(), translator_Y.value()))
+            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.translateLine(self.figure, self.points, translator_X.value(), translator_Y.value()))
             #layout
             mainLayout.addWidget(translator_X)
             mainLayout.addWidget(translator_Y)
@@ -53,18 +54,17 @@ class TranslateDialog(QDialog, AdditionalDialogMethods):
         pass
     
     #Slots
-    def translateLine(self, translationX, translationY):
-        #get lineItem from group
-        lineItem = self.getLineItemFromGroup(self.groupItem)
-        #points of line
-        startPoint_GLOBAL = lineItem.line().p1()
-        centerPoint_GLOBAL = lineItem.line().center()
-        endPoint_GLOBAL = lineItem.line().p2()
-        #transformations for points (reverse motion)
-        transform = QTransform()
-        transform.translate(translationX, translationY)
-        #apply transformations
-        startPoint = transform.map(startPoint_GLOBAL)
-        endPoint = transform.map(endPoint_GLOBAL)
-        self.points = [startPoint, endPoint]
+    def translateLine(self, figure: Figures, points: list[QPointF], translationX, translationY):
+        if figure == Figures.LINE:
+            #points of line
+            startPoint_GLOBAL = points[0]
+            endPoint_GLOBAL = points[1]
+            centerPoint_GLOBAL = QLineF(startPoint_GLOBAL, endPoint_GLOBAL).center()
+            #transformations for points (reverse motion)
+            transform = QTransform()
+            transform.translate(translationX, translationY)
+            #apply transformations
+            startPoint = transform.map(startPoint_GLOBAL)
+            endPoint = transform.map(endPoint_GLOBAL)
+            self.points = [startPoint, endPoint]
         self.accept()
