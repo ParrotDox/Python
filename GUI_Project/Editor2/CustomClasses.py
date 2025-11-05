@@ -22,25 +22,13 @@ class QGraphicsCustomView(QGraphicsView):
     def mousePressEvent(self, event: QMouseEvent):
         pressPointF = event.position()
         pressPointInt = QPoint(int(pressPointF.x()), int(pressPointF.y()))
-        if event.buttons() == Qt.MouseButton.LeftButton:
-
-            items = self.items(pressPointInt)
-            filteredGroups = []
-
-            #filter only groups
-            for it in items:
-                if isinstance(it, QGraphicsItemGroup):
-                    filteredGroups.append(it)
-
-            self.itemFocused.emit(self.scene(), filteredGroups, pressPointF)
-            self.lastLeftMousePos = pressPointF
-
-        elif event.buttons() == Qt.MouseButton.MiddleButton:
+        
+        if event.buttons() == Qt.MouseButton.MiddleButton:
 
             self.lastMiddleMousePos = pressPointF
         
         elif event.buttons() == Qt.MouseButton.LeftButton and event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-            
+            print("shiftModifier")
             items = self.items(pressPointInt)
             filteredGroups = []
             
@@ -50,6 +38,18 @@ class QGraphicsCustomView(QGraphicsView):
                     filteredGroups.append(it)
             
             self.itemFocusedToGroup.emit(self.scene(), filteredGroups, pressPointF)
+            self.lastLeftMousePos = pressPointF
+
+        elif event.buttons() == Qt.MouseButton.LeftButton:
+            items = self.items(pressPointInt)
+            filteredGroups = []
+
+            #filter only groups
+            for it in items:
+                if isinstance(it, QGraphicsItemGroup):
+                    filteredGroups.append(it)
+
+            self.itemFocused.emit(self.scene(), filteredGroups, pressPointF)
             self.lastLeftMousePos = pressPointF
 
         return super().mousePressEvent(event)
@@ -134,17 +134,14 @@ class QOneWayToggleButton(QPushButton):
         if not self.isChecked():
             return super().mousePressEvent(e)
 
-class QGraphicsFigureAdditional():
+class QGraphicsCustomItemGroup(QGraphicsItemGroup):
     def __init__(self):
+        super().__init__()
         self.pen = None
         self.brush = None
         self.scaleFactor = 1
         self.points: list[QPointF] = []
         self.baseChildItems = []    #Base child items (QGEllipse, QGLine etc.) 
-class QGraphicsCustomItemGroup(QGraphicsItemGroup, QGraphicsFigureAdditional):
-    def __init__(self):
-        QGraphicsItemGroup.__init__(self)
-        QGraphicsFigureAdditional.__init__(self)
 '''Every class indicates to program that it works with a [line, point, cube, mixed item]'''
 class QGraphicsCubeGroup(QGraphicsCustomItemGroup):
     def __init__(self):
@@ -158,4 +155,30 @@ class QGraphicsPointGroup(QGraphicsCustomItemGroup):
 class QGraphicsMixedGroup(QGraphicsCustomItemGroup):
     def __init__(self):
         super().__init__()
+        
+    def addToGroup(self, item):
+        if isinstance(item, (QGraphicsMixedGroup, QGraphicsCubeGroup, QGraphicsLineGroup, QGraphicsPointGroup)):
+            '''add items from metadata'''
+            for pt in item.points:
+                if pt in self.points:
+                    continue
+                else:
+                    self.points.append(pt)
+            for chld in item.childItems():
+                if chld in self.baseChildItems:
+                    continue
+                else:
+                    self.baseChildItems.append(chld)
+        return super().addToGroup(item)
+    def removeFromGroup(self, item):
+        if isinstance(item, (QGraphicsMixedGroup, QGraphicsCubeGroup, QGraphicsLineGroup, QGraphicsPointGroup)):
+            '''remove invalid items from metadata'''
+            for pt in item.points:
+                if pt in self.points:
+                    self.points.remove(pt)
+            for chld in item.childItems():
+                if pt in self.baseChildItems:
+                    self.baseChildItems.remove(chld)
+
+        return super().removeFromGroup(item)
         

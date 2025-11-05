@@ -16,14 +16,13 @@ from PySide6.QtGui import QTransform
 
 class TranslateDialog(QDialog, AdditionalDialogMethods):
 
-    def __init__(self, figure: Figures, groupItem: QGraphicsItemGroup, points: list[QPointF]):
+    def __init__(self, figure: Figures, points: list[QPointF]):
         super().__init__()
         self.initUI(figure)
         self.setWindowTitle("TranslateDialog"); self.setFixedSize(480, 320)
         self.setObjectName("TranslateDialog")
 
         self.figure = figure
-        self.groupItem = groupItem
         self.points: list[QPointF] = points
     
     def initUI(self, figure: Figures):
