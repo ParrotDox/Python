@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsEllipseItem, QGraphicsItemGroup
+from Additional import AdditionalMethods
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtWidgets import QGraphicsSceneMouseEvent
 from PySide6.QtCore import Signal, QPointF, QPoint, Qt, QRect
@@ -143,9 +144,6 @@ class QGraphicsCustomItemGroup(QGraphicsItemGroup):
         self.points: list[QPointF] = []
         self.baseChildItems = []    #Base child items (QGEllipse, QGLine etc.) 
 '''Every class indicates to program that it works with a [line, point, cube, mixed item]'''
-class QGraphicsCubeGroup(QGraphicsCustomItemGroup):
-    def __init__(self):
-        super().__init__()
 class QGraphicsLineGroup(QGraphicsCustomItemGroup):
     def __init__(self):
         super().__init__()
@@ -181,4 +179,36 @@ class QGraphicsMixedGroup(QGraphicsCustomItemGroup):
                     self.baseChildItems.remove(chld)
 
         return super().removeFromGroup(item)
-        
+class QGraphicsCubeGroup(QGraphicsMixedGroup):
+    def __init__(self):
+        super().__init__()
+        #    X    Y    Z
+        self.points = [
+            [-1, -1, -1], 
+            [ 1, -1, -1],   
+            [ 1,  1, -1],  
+            [-1,  1, -1],  
+            [-1, -1,  1],  
+            [ 1, -1,  1],  
+            [ 1,  1,  1],  
+            [-1,  1,  1]   
+        ]
+        self.pairs = [
+            [self.points[0], self.points[1]],  
+            [self.points[1], self.points[2]],  
+            [self.points[2], self.points[3]],  
+            [self.points[3], self.points[0]],  
+
+            [self.points[4], self.points[5]],  
+            [self.points[5], self.points[6]],  
+            [self.points[6], self.points[7]],  
+            [self.points[7], self.points[4]],  
+
+            [self.points[0], self.points[4]],  
+            [self.points[1], self.points[5]],  
+            [self.points[2], self.points[6]],  
+            [self.points[3], self.points[7]]   
+        ]
+        self.lines = []
+    
+    
