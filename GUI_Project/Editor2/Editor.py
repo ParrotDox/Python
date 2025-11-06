@@ -6,6 +6,7 @@ from TSRM.Scale import ScaleDialog
 from TSRM.Rotate import RotateDialog
 from TSRM.Mirror import MirrorDialog
 from EditorEnum import Figures, SelectModes
+from Additional import AdditionalMethods
 from CustomClasses import (
     QGraphicsCustomScene,
     QOneWayToggleButton,
@@ -64,6 +65,8 @@ class EditorWidget(QWidget):
         #Current scale
         self.scaleFactor = 50
 
+        #Toggle buttons
+        self.selectModeButtons = []
         self.initUI()
         self.setWindowTitle("Editor"); self.setFixedSize(1280, 720)
         self.setObjectName("Editor")
@@ -77,20 +80,20 @@ class EditorWidget(QWidget):
         buttonUpdate = QPushButton("U"); buttonUpdate.setFixedSize(35,35); buttonUpdate.clicked.connect(lambda: self.openUpdateDialog(scene, library))
         buttonDelete = QPushButton("D"); buttonDelete.setFixedSize(35,35); buttonDelete.clicked.connect(lambda: self.deleteCurrentItem(scene, library))
 
-        buttonTranslate = QPushButton("T"); buttonTranslate.setFixedSize(35,35); buttonTranslate.clicked.connect(lambda: self.operTranslateDialog(scene, library))
+        buttonTranslate = QPushButton("T"); buttonTranslate.setFixedSize(35,35); buttonTranslate.clicked.connect(lambda: self.openTranslateDialog(scene, library))
         buttonScale = QPushButton("S"); buttonScale.setFixedSize(35,35); buttonScale.clicked.connect(lambda: self.openScaleDialog(scene, library))
         buttonRotate = QPushButton("R"); buttonRotate.setFixedSize(35,35); buttonRotate.clicked.connect(lambda: self.openRotateDialog(scene, library))
         buttonMirror = QPushButton("M"); buttonMirror.setFixedSize(35,35); buttonMirror.clicked.connect(lambda: self.openMirrorDialog(scene, library))
 
-        buttonPoint = QOneWayToggleButton(self.createIcon("Icons/point.png", 35, 35), ""); buttonPoint.setFixedSize(35,35); buttonPoint.clicked.connect(lambda:self.setSelectMode(selectModeButtons, SelectModes.POINT)); buttonPoint.setCheckable(True); buttonPoint.setChecked(False)
-        buttonLine = QOneWayToggleButton(self.createIcon("Icons/line.png", 35, 35), ""); buttonLine.setFixedSize(35,35); buttonLine.clicked.connect(lambda:self.setSelectMode(selectModeButtons, SelectModes.LINE)); buttonLine.setCheckable(True); buttonLine.setChecked(True)
-        buttonMixed = QOneWayToggleButton(self.createIcon("Icons/group.png", 35, 35), ""); buttonMixed.setFixedSize(35,35); buttonMixed.clicked.connect(lambda:self.setSelectMode(selectModeButtons, SelectModes.MIXED)); buttonMixed.setCheckable(True); buttonMixed.setChecked(False)
-        selectModeButtons = [buttonPoint, buttonLine, buttonMixed]
+        buttonPoint = QOneWayToggleButton(self.createIcon("Icons/point.png", 35, 35), ""); buttonPoint.setFixedSize(35,35); buttonPoint.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.POINT)); buttonPoint.setCheckable(True); buttonPoint.setChecked(False)
+        buttonLine = QOneWayToggleButton(self.createIcon("Icons/line.png", 35, 35), ""); buttonLine.setFixedSize(35,35); buttonLine.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.LINE)); buttonLine.setCheckable(True); buttonLine.setChecked(True)
+        buttonMixed = QOneWayToggleButton(self.createIcon("Icons/group.png", 35, 35), ""); buttonMixed.setFixedSize(35,35); buttonMixed.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.MIXED)); buttonMixed.setCheckable(True); buttonMixed.setChecked(False)
+        self.selectModeButtons.extend([buttonPoint, buttonLine, buttonMixed])
 
         buttonGroup = QPushButton(self.createIcon("Icons/pack.png", 35, 35), ""); buttonGroup.setFixedSize(35,35); buttonGroup.clicked.connect(lambda: self.groupPreparedItems(scene, library))
         buttonUngroup = QPushButton(self.createIcon("Icons/unpack.png", 35, 35), ""); buttonUngroup.setFixedSize(35,35); buttonUngroup.clicked.connect(lambda: self.ungroup(scene, library, self.currentGroup))
 
-        scene = QGraphicsCustomScene(QRect(-1000,-1000,2000,2000), self.scaleFactor, self.defaultPen, self.defaultPen)
+        scene = QGraphicsCustomScene(QRect(-1000*self.scaleFactor,-1000*self.scaleFactor,2000*self.scaleFactor,2000*self.scaleFactor), self.scaleFactor, self.defaultPen, self.defaultPen)
         view = QGraphicsCustomView(scene)
         view.itemFocused.connect(lambda scene, filteredGroups, point: self.setCurrentItemByCSM(scene, library, filteredGroups, point))
         view.itemFocusedToGroup.connect(lambda scene, filteredGroups, point: self.prepareToGroup(scene, library, filteredGroups, point))
@@ -185,7 +188,7 @@ class EditorWidget(QWidget):
             if dialog.figure == Figures.LINE:
                 #Add to scene
                 points: list[QPointF] = dialog.points
-                newLine = self.createCustomLine(points) #line is a group!
+                newLine = AdditionalMethods.createCustomLine(points, self.scaleFactor) #line is a group!
                 #add item everywhere
                 self.addItemEverywhere(scene, library, newLine, points)
             elif dialog.figure == Figures.CUBE:
@@ -202,57 +205,77 @@ class EditorWidget(QWidget):
 
         '''Send appropriate arguments depended on selectionMode'''
         if figureType == Figures.POINT:
+
             dialog = UpdateDialog(Figures.LINE)
 
         elif figureType == Figures.LINE:
+
             dialog = UpdateDialog(Figures.LINE)
 
         elif figureType == Figures.MIXED:
+
             return
+        
+        elif figureType == Figures.CUBE:
+
+            dialog = UpdateDialog(Figures.CUBE)
         
         result = dialog.exec()
 
 
         '''Seek Mixed group'''
-        if figureType == SelectModes.POINT:
+        if figureType == Figures.POINT:
 
             #Point can't exist without a parent line
-            if parent.parentItem() != None and isinstance(parent.parentItem(), QGraphicsMixedGroup):
+            if parent != None:
+                
                 parent = parent.parentItem() #Got QMixedGroup
 
-        elif figureType == SelectModes.LINE:
+        elif figureType == Figures.LINE:
 
-            if parent.parentItem() != None:
-                parent = parent.parentItem() #Got QMixedGroup
+            pass
         
+        elif figureType == Figures.CUBE:
+
+            pass
+        
+
         '''Update item'''
         if result == QDialog.DialogCode.Accepted and (figureType in [Figures.POINT, Figures.LINE]):
+
             new_points: list[QPointF] = dialog.points
-            newItem = self.createCustomLine(new_points)
+            newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
 
             if parent != None and isinstance(parent, QGraphicsMixedGroup):
                 
-                '''Update parent group'''
+                '''Replace old line by new at scene'''
                 if figureType == Figures.POINT:
-                    parent.removeFromGroup(self.currentItem.parentItem())
+                    
                     self.replaceItemInScene(scene, self.currentItem.parentItem(), newItem)
+                
                 elif figureType == Figures.LINE:
-                    parent.removeFromGroup(self.currentItem)
+                    
                     self.replaceItemInScene(scene, self.currentItem, newItem)
-
+                
+                '''Replace old line by new in group'''
+                if figureType == Figures.POINT:
+                    
+                    parent.removeFromGroup(self.currentItem.parentItem())
+                
+                elif figureType == Figures.LINE:
+                    
+                    parent.removeFromGroup(self.currentItem)
+                
                 parent.addToGroup(newItem)
-                self.setCurrentItemByCSM(scene, library, [newItem, parent], QPointF())
 
             else:
                 #replace item everywhere
                 self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, new_points)
-                #set focus
-                self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
   
         if result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             #TODO
             pass       
-    def operTranslateDialog(self, scene: QGraphicsScene, library: QListWidget):
+    def openTranslateDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
         
@@ -261,99 +284,261 @@ class EditorWidget(QWidget):
         dialog: TranslateDialog = None
 
         '''Send appropriate arguments depended on selectionMode'''
-        if figureType == Figures.POINT:
-            dialog = TranslateDialog(Figures.LINE, parent.points)
-
-        elif figureType == Figures.LINE:
-            dialog = TranslateDialog(Figures.LINE, self.currentItem.points)
-
-        elif figureType == Figures.MIXED:
-            return
-        
-        result = dialog.exec()
-
-
         '''Seek Mixed group'''
-        if figureType == SelectModes.POINT:
+        if figureType == Figures.POINT:
 
+            dialog = TranslateDialog(scene, Figures.POINT, self.currentItem, self.currentGroup, parent.points)
             #Point can't exist without a parent line
-            if parent.parentItem() != None and isinstance(parent.parentItem(), QGraphicsMixedGroup):
-                parent = parent.parentItem() #Got QMixedGroup
-
-        elif figureType == SelectModes.LINE:
-
             if parent.parentItem() != None:
                 parent = parent.parentItem() #Got QMixedGroup
+
+        elif figureType == Figures.LINE:
+
+            dialog = TranslateDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points)
+
+        elif figureType == Figures.MIXED:
+
+            dialog = TranslateDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points)
+        
+        result = dialog.exec()
 
 
         '''Translate line'''
         if result == QDialog.DialogCode.Accepted and (figureType in [Figures.POINT, Figures.LINE]):
+            
+            oldLine = self.currentItem.parentItem()
             new_points: list[QPointF] = dialog.points
-            newItem = self.createCustomLine(new_points)
-
+            newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+            
             if parent != None and isinstance(parent, QGraphicsMixedGroup):
-                '''Update parent group'''
+                '''Replace old line by new at scene'''
+                '''Replace old line by new in group'''
                 if figureType == Figures.POINT:
-                    parent.removeFromGroup(self.currentItem.parentItem())
+                    
                     self.replaceItemInScene(scene, self.currentItem.parentItem(), newItem)
+                    parent.removeFromGroup(oldLine)
+
                 elif figureType == Figures.LINE:
-                    parent.removeFromGroup(self.currentItem)
+                    
                     self.replaceItemInScene(scene, self.currentItem, newItem)
+                    parent.removeFromGroup(self.currentItem)
                 
                 parent.addToGroup(newItem)
-                self.setCurrentItemByCSM(scene, library, [newItem, parent], QPointF())
 
             else:
-                #replace item everywhere
-                self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, new_points)
-                #set focus
-                self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
-                    
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
+                    self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
+                elif figureType == Figures.LINE:
+                    self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
+            
+            '''Replace old group by new at scene'''
+            #Get new group (In dialog old lines were removed from scene)
+            newGroup = dialog.item
+            #Update group in library
+            self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
+
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             #TODO
             pass
     def openScaleDialog(self, scene: QGraphicsScene, library: QListWidget):
-        if self.currentGroup == None:
+        if self.currentItem == None:
             return
         
-        #Check what figure does editor contain
-        figure = self.whatFigure(self.currentGroup)
+        figureType = self.whatFigure(self.currentItem)
+        parent: QGraphicsCustomItemGroup = self.currentItem.parentItem()
+        dialog: TranslateDialog = None
 
-        dialog = ScaleDialog(figure, self.currentGroup, self.currentGroup.points)
+        '''Send appropriate arguments depended on selectionMode'''
+        '''Seek Mixed group'''
+        if figureType == Figures.POINT:
+
+            dialog = ScaleDialog(scene, Figures.POINT, self.currentItem, self.currentGroup, parent.points)
+            #Point can't exist without a parent line
+            if parent.parentItem() != None:
+                parent = parent.parentItem() #Got QMixedGroup
+    
+        elif figureType == Figures.LINE:
+
+            dialog = ScaleDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points)
+
+        elif figureType == Figures.MIXED:
+
+            dialog = ScaleDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points)
+        
         result = dialog.exec()
 
-        if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
-            #create new line based at points
-            points: list[QPointF] = dialog.points
-            newItem = self.createCustomLine(points)
-            #replace item everywhere
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, points)
-            #setFocus
-            self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
+
+        '''Scale'''
+        if result == QDialog.DialogCode.Accepted and figureType == Figures.POINT:
+            
+            #Two variants: or it is a [independed item] or an [item with parent mixedgroup]
+            if isinstance(self.currentGroup, QGraphicsMixedGroup):
+
+                '''Replace old group by new at scene'''
+                #Get new group (In dialog old lines were removed from scene)
+                newGroup = dialog.item
+                #Update group everywhere
+                self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
+
+            elif isinstance(self.currentGroup, QGraphicsLineGroup):
+                
+                oldLine = self.currentItem.parentItem()
+                new_points: list[QPointF] = dialog.points
+                newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
                     
-        if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
+                    self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
+
+                elif figureType == Figures.LINE:
+
+                    self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
+            
+            new_points: list[QPointF] = dialog.points
+            newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+
+            if parent != None and isinstance(parent, QGraphicsMixedGroup):
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
+                    
+                    self.replaceItemInScene(scene, self.currentItem.parentItem(), newItem)
+                
+                elif figureType == Figures.LINE:
+                    
+                    self.replaceItemInScene(scene, self.currentItem, newItem)
+                
+                '''Replace old line by new in group'''
+                if figureType == Figures.POINT:
+                    
+                    parent.removeFromGroup(self.currentItem.parentItem())
+                
+                elif figureType == Figures.LINE:
+                    
+                    parent.removeFromGroup(self.currentItem)
+                
+                parent.addToGroup(newItem)
+
+            else:
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
+                    self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
+                elif figureType == Figures.LINE:
+                    self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
+            
+            '''Replace old group by new at scene'''
+            #Get new group (In dialog old lines were removed from scene)
+            newGroup = dialog.item
+            #Update group everywhere
+            self.replaceItemEverywhere(scene, library, self.currentGroup, newGroup, newGroup.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             #TODO
             pass  
     def openRotateDialog(self, scene: QGraphicsScene, library: QListWidget):
-        if self.currentGroup == None:
+        if self.currentItem == None:
             return
         
-        #Check what figure does editor contain
-        figure = self.whatFigure(self.currentGroup)
+        figureType = self.whatFigure(self.currentItem)
+        parent: QGraphicsCustomItemGroup = self.currentItem.parentItem()
+        dialog: TranslateDialog = None
 
-        dialog = RotateDialog(figure, self.currentGroup, self.currentGroup.points)
+        '''Send appropriate arguments depended on selectionMode'''
+        '''Seek Mixed group'''
+        if figureType == Figures.POINT:
+
+            dialog = RotateDialog(scene, Figures.POINT, self.currentItem, self.currentGroup, parent.points)
+            #Point can't exist without a parent line
+            if parent.parentItem() != None:
+                parent = parent.parentItem() #Got QMixedGroup
+    
+        elif figureType == Figures.LINE:
+
+            dialog = RotateDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points)
+
+        elif figureType == Figures.MIXED:
+
+            dialog = RotateDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points)
+        
         result = dialog.exec()
 
-        if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
-            #create new line based at points
-            points: list[QPointF] = dialog.points
-            newItem = self.createCustomLine(points)
-            #replace item everywhere
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newItem, points)
-            #setFocus
-            self.setCurrentItemByCSM(scene, library, [newItem], QPointF())
+
+        '''Scale'''
+        if result == QDialog.DialogCode.Accepted and figureType == Figures.POINT:
+            
+            #Two variants: or it is a [independed item] or an [item with parent mixedgroup]
+            if isinstance(self.currentGroup, QGraphicsMixedGroup):
+
+                '''Replace old group by new at scene'''
+                #Get new group (In dialog old lines were removed from scene)
+                newGroup = dialog.item
+                #Update group everywhere
+                self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
+
+            elif isinstance(self.currentGroup, QGraphicsLineGroup):
+                
+                oldLine = self.currentItem.parentItem()
+                new_points: list[QPointF] = dialog.points
+                newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
                     
-        if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
+                    self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
+
+                elif figureType == Figures.LINE:
+
+                    self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
+            
+            new_points: list[QPointF] = dialog.points
+            newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+
+            if parent != None and isinstance(parent, QGraphicsMixedGroup):
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
+                    
+                    self.replaceItemInScene(scene, self.currentItem.parentItem(), newItem)
+                
+                elif figureType == Figures.LINE:
+                    
+                    self.replaceItemInScene(scene, self.currentItem, newItem)
+                
+                '''Replace old line by new in group'''
+                if figureType == Figures.POINT:
+                    
+                    parent.removeFromGroup(self.currentItem.parentItem())
+                
+                elif figureType == Figures.LINE:
+                    
+                    parent.removeFromGroup(self.currentItem)
+                
+                parent.addToGroup(newItem)
+
+            else:
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
+                    self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
+                elif figureType == Figures.LINE:
+                    self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
+            
+            '''Replace old group by new at scene'''
+            #Get new group (In dialog old lines were removed from scene)
+            newGroup = dialog.item
+            #Update group everywhere
+            self.replaceItemEverywhere(scene, library, self.currentGroup, newGroup, newGroup.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             #TODO
             pass
     def openMirrorDialog(self, scene: QGraphicsScene, library: QListWidget):
@@ -369,7 +554,7 @@ class EditorWidget(QWidget):
         if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
             #create new line based at points
             points: list[QPointF] = dialog.points
-            newItem = self.createCustomLine(points)
+            newItem = AdditionalMethods.createCustomLine(points, self.scaleFactor)
             #add item everywhere
             self.addItemEverywhere(scene, library, newItem, points)
                     
@@ -499,10 +684,13 @@ class EditorWidget(QWidget):
                 self.paintItem(self.currentItem, self.focusedPen, self.focusedBrush)
                 self.setFocusAtLibraryByItem(library, currentGroup) 
     def setCurrentItemByLibrary(self, scene: QGraphicsScene, library: QListWidget, listItem: QListWidgetItem):
+        
         data = listItem.data(Qt.ItemDataRole.UserRole)
         item: QGraphicsItemGroup = data["item"]
+        
         if item == self.currentGroup:
             return
+        
         if item == None:
             if self.currentGroup != None:
                 self.currentGroup = None
@@ -510,12 +698,35 @@ class EditorWidget(QWidget):
                 return
             else:
                 return
+        
+        '''Paint default old item'''
         if self.currentGroup != None:
             self.paintItem(self.currentGroup, self.defaultPen, self.defaultBrush)
         
+        '''Set new item'''
+        self.currentItem = item
         self.currentGroup = item
+
+        '''Set appropriate select mode'''
+        figureType = self.whatFigure(item)
+        selectMode = None
+
+        if figureType == Figures.POINT:
+            
+            selectMode = SelectModes.POINT
+        
+        elif figureType == Figures.LINE:
+            
+            selectMode = SelectModes.LINE
+        
+        elif figureType == Figures.MIXED or figureType == Figures.CUBE:
+            
+            selectMode = SelectModes.MIXED
+        
+        self.setSelectMode(self.selectModeButtons, selectMode)
+        
+        '''Paint focused'''
         self.paintItem(self.currentGroup, self.focusedPen, self.focusedBrush)
-        print(f"Current item {item}")   
     def setLibraryItemName(self, library: QListWidget, item: QGraphicsItemGroup, text: str):
         #update text in widgetList element
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
@@ -556,7 +767,6 @@ class EditorWidget(QWidget):
         pass
     #Replacers
     def replaceItemInLibrary(self, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
-        print(f"replaceItemInLibrary: {oldItem} |  {newItem}")
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
         for it in listItems:
             data = it.data(Qt.ItemDataRole.UserRole)
@@ -568,12 +778,10 @@ class EditorWidget(QWidget):
                 break
         self.setFocusAtLibraryByItem(library, newItem)
     def replaceItemInScene(self, scene: QGraphicsScene, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup):
-        print(f"replaceItemInScene: {oldItem} |  {newItem}")
         scene.removeItem(oldItem)
         scene.addItem(newItem)
         pass
     def replaceItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
-        print(f"replaceItemEverywhere: {oldItem} |  {newItem}")
         #replace in library
         self.replaceItemInLibrary(library, oldItem, newItem, points)
         #redraw line at scene
@@ -610,7 +818,7 @@ class EditorWidget(QWidget):
 
                 '''Create and replace old item'''
                 #Create new line
-                newLine = self.createCustomLine(new_points)
+                newLine = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
                 
                 #Deconstruct item to get current PointGroup
                 currentPointItem: QGraphicsPointGroup = None
@@ -630,7 +838,7 @@ class EditorWidget(QWidget):
                     oldLine_parent.removeFromGroup(oldLine)
                     self.deleteItemFromScene(scene, oldLine)
                     oldLine_parent.addToGroup(newLine)
-                    #self.replaceItemInLibrary(library, oldLine, newLine)
+                    self.replaceItemInLibrary(library, oldLine, newLine, newLine.points)
                     #Set focus
                     self.setCurrentItemByCSM(scene, library, [currentPointItem, topSideParent], QPointF())
             elif isinstance(self.currentItem, QGraphicsLineGroup) and self.selectMode == SelectModes.LINE:
@@ -643,7 +851,7 @@ class EditorWidget(QWidget):
                 
                 '''Create and replace old item'''
                 #Create new line
-                newLine = self.createCustomLine(new_points)
+                newLine = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
                 
                 #Check if object is top-parent
                 if parent == None:
@@ -662,7 +870,7 @@ class EditorWidget(QWidget):
             elif isinstance(self.currentItem, QGraphicsMixedGroup) and self.selectMode == SelectModes.MIXED:
                 '''Get all Mixed groups'''
 
-                groups: list[QGraphicsMixedGroup] = self.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+                groups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
                 groups.append(self.currentGroup)
 
                 '''Create and replace old items in mixed groups'''
@@ -674,7 +882,7 @@ class EditorWidget(QWidget):
                             new_points = [old_points[0] + delta/self.scaleFactor, old_points[1] + delta/self.scaleFactor]
                             
                             #Create new line
-                            newLine = self.createCustomLine(new_points)
+                            newLine = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
                             
                             #Replace old by new
                             gr.removeFromGroup(oldLine)
@@ -720,7 +928,7 @@ class EditorWidget(QWidget):
         self.currentItem = None
 
         if isinstance(item, QGraphicsMixedGroup):
-            groups = self.getAllChildItemsByCategory(item, (QGraphicsMixedGroup)); groups.append(item)
+            groups = AdditionalMethods.getAllChildItemsByCategory(item, (QGraphicsMixedGroup)); groups.append(item)
             for gr in groups:
                 self.groups.remove(gr)
     def deleteItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, item: QGraphicsItem):
@@ -737,53 +945,66 @@ class EditorWidget(QWidget):
         scene.crossPen = crossPen
         scene.update()
     def redrawItems(self, scene: QGraphicsCustomScene, library: QListWidget):
+        
         print(f"redrawItems:")
         sceneItems = scene.items()
         currentFocusedItem = self.currentGroup #Memorize focused object
         currentPreparedItems = self.preparedGroups
+        
         savedPreparedItemsToPaint = []
         for parentItem in sceneItems:
             if isinstance(parentItem, QGraphicsMixedGroup):
                 for chld in parentItem.childItems():
                     if isinstance(chld, QGraphicsMixedGroup):
+                        
                         '''Replace old focused object to new'''
                         if currentFocusedItem == chld:
                             currentFocusedItem = chld
+                        
                         '''Save new prepared MixedGroup'''
                         if chld in currentPreparedItems:
+                        
                             savedPreparedItemsToPaint.append(chld)
                     elif isinstance(chld, QGraphicsLineGroup):
+                        
                         '''Create new item and replace old everywhere'''
                         oldItem: QGraphicsLineGroup = chld
                         points = oldItem.points
-                        newItem = self.createCustomLine(points)
+                        newItem = AdditionalMethods.createCustomLine(points, self.scaleFactor)
                         parentItem.removeFromGroup(oldItem)
                         self.replaceItemInScene(scene, oldItem, newItem)
                         parentItem.addToGroup(newItem)
+                        
                         '''Save new prepared LineGroup'''
                         if chld in currentPreparedItems:
                             savedPreparedItemsToPaint.append(chld)
+                        
                         '''Replace old focused item to new'''
                         if currentFocusedItem == chld:
                             currentFocusedItem = chld
                         
             elif isinstance(parentItem, QGraphicsLineGroup) and parentItem.parentItem() == None:
+                
                 '''Create new item and replace old everywhere'''
                 oldItem: QGraphicsLineGroup = parentItem
                 points = oldItem.points
-                newItem = self.createCustomLine(points)
+                newItem = AdditionalMethods.createCustomLine(points, self.scaleFactor)
                 self.replaceItemEverywhere(scene, library, oldItem, newItem, points)
+                
                 '''Replace old prepared item to new'''
                 if oldItem in currentPreparedItems:
                     savedPreparedItemsToPaint.append(newItem)
+                
                 '''Replace old focused object to new'''
                 if currentFocusedItem == parentItem:
                     currentFocusedItem = newItem 
+        
         
         #Paint prepared and set prepared list
         self.preparedGroups = savedPreparedItemsToPaint
         for item in savedPreparedItemsToPaint:
             self.paintItem(item, self.preparedPen, self.preparedBrush)
+        
         #set focus from old to new item
         self.setCurrentItemByCSM(scene, library, [currentFocusedItem], QPointF())
     def redrawEverything(self, scene: QGraphicsCustomScene, library: QListWidget, scaleFactor: float, deltaY: float, defaultPen: QPen, crossPen: QPen):
@@ -794,11 +1015,14 @@ class EditorWidget(QWidget):
             self.scaleFactor = scaleFactor * 0.9
         self.redrawGrid(scene, self.scaleFactor, defaultPen, crossPen)
         self.redrawItems(scene, library)
+        scene.setSceneRect(QRect(-1000*self.scaleFactor,-1000*self.scaleFactor,2000*self.scaleFactor,2000*self.scaleFactor))
     #Group
     def prepareToGroup(self, scene: QGraphicsScene, library: QListWidget, filteredGroups: list[QGraphicsItemGroup], point: QPointF):
+        
         print("---prepareToGroup---")
         '''Get item from clicked area'''
         group = self.selectFromGroups(filteredGroups, (QGraphicsLineGroup, QGraphicsCubeGroup, QGraphicsMixedGroup))
+        
         '''Check if item is currently focused'''
         if group == self.currentGroup:
             return
@@ -807,17 +1031,21 @@ class EditorWidget(QWidget):
             self.paintItem(group, self.defaultPen, self.defaultBrush)
             print(f"Items in prepared group: {len(self.preparedGroups)}")
             return
+        
         '''If isn't focused then add to prepare group'''
         self.preparedGroups.append(group)
         self.paintItem(group, self.preparedPen, self.preparedBrush)
         print(f"Items in prepared group: {len(self.preparedGroups)}")
-        pass
     def groupPreparedItems(self, scene: QGraphicsScene, library: QListWidget):
+        
         print(f"groupPreparedItems:")
         if len(self.preparedGroups) <= 1:
             pass
+        
         else:
+            
             mixedGroup = QGraphicsMixedGroup()
+            
             '''Add items to mixed group and replace them by one item in library'''
             for gr in self.preparedGroups:
                 #Remove items everywhere
@@ -851,28 +1079,6 @@ class EditorWidget(QWidget):
 
             self.groups.remove(group)
     #Additional methods
-    def createCustomLine(self, points: list[QPointF]):
-        #All points for drawing scaled by scaleFactor!
-        '''Line points to draw a line'''
-        linePStart = QPointF(points[0].x()*self.scaleFactor, points[0].y()*self.scaleFactor) #Start point for line
-        linePEnd = QPointF(points[1].x()*self.scaleFactor, points[1].y()*self.scaleFactor) #End point for line
-        '''Start point item for ellipse of line'''
-        ellipseStart = QGraphicsEllipseItem(linePStart.x()-5, linePStart.y()-5, 10, 10)
-        pointStartGroup = QGraphicsPointGroup(); pointStartGroup.points = [points[0]]
-        pointStartGroup.addToGroup(ellipseStart)
-        '''End point item for ellipse of line'''
-        ellipseEnd = QGraphicsEllipseItem(linePEnd.x()-5, linePEnd.y()-5, 10, 10)
-        pointEndGroup = QGraphicsPointGroup(); pointEndGroup.points = [points[1]]
-        pointEndGroup.addToGroup(ellipseEnd)
-        '''Line item and group gathering'''
-        lineItem = QGraphicsLineItem(QLineF(linePStart, linePEnd))
-        group = QGraphicsLineGroup()
-        group.addToGroup(pointStartGroup); group.addToGroup(pointEndGroup); group.addToGroup(lineItem)
-        '''Metainfo about group'''
-        group.scaleFactor = self.scaleFactor
-        group.points = points
-        group.baseChildItems = ellipseStart, ellipseEnd, lineItem
-        return group
     def getAllBaseChildItems(self, item: QGraphicsItem):
         '''Returns all base items of group'''
         '''Unpack group items'''
@@ -887,18 +1093,7 @@ class EditorWidget(QWidget):
                 else:
                     all_items.extend(self.getAllBaseChildItems(chld))
         return all_items
-    def getAllChildItemsByCategory(self, group: QGraphicsItemGroup, class_types: tuple):
-        all_items = []
-
-        for item in group.childItems():
-            if isinstance(item, class_types):
-                all_items.append(item)
-
-            if isinstance(item, QGraphicsItemGroup):
-                all_items.extend(self.getAllChildItemsByCategory(item, class_types))
-
-        return all_items
-    def selectFromGroups(self, groups: list[QGraphicsItemGroup], class_types: tuple): #TODO
+    def selectFromGroups(self, groups: list[QGraphicsItemGroup], class_types: tuple):
         '''Method used with increasing order of items ierarchy'''
         group = None
         for gr in reversed(groups): #reverse because parents are last in list

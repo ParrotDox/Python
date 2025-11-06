@@ -1,6 +1,6 @@
 from EditorEnum import Figures
 from CustomClasses import QGraphicsLineGroup, QGraphicsCubeGroup, QGraphicsMixedGroup
-from TSRM.Additional import AdditionalDialogMethods
+from Additional import AdditionalMethods
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
@@ -22,7 +22,7 @@ from CustomClasses import (
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QTransform
 
-class MirrorDialog(QDialog, AdditionalDialogMethods):
+class MirrorDialog(QDialog, AdditionalMethods):
 
     def __init__(self, figure: Figures, groupItem: QGraphicsItemGroup, points: list[QPointF]):
         super().__init__()
@@ -52,6 +52,8 @@ class MirrorDialog(QDialog, AdditionalDialogMethods):
     
     #Slots
     def MirrorItem(self, figure: Figures, points: list[QPointF], mirrorX, mirrorY):
+        if not mirrorX and not mirrorY:
+            return
         if figure == Figures.LINE:
             #points of line
             startPoint_GLOBAL = points[0]
