@@ -70,10 +70,7 @@ class EditorWidget(QWidget):
         self.initUI()
         self.setWindowTitle("Editor"); self.setFixedSize(1280, 720)
         self.setObjectName("Editor")
-
-        
-        
-
+ 
     def initUI(self):
         #widgets
         buttonCreate = QPushButton("C"); buttonCreate.setFixedSize(35,35); buttonCreate.clicked.connect(lambda: self.openCreateDialog(scene, library))
@@ -396,7 +393,7 @@ class EditorWidget(QWidget):
 
                 elif figureType == Figures.LINE:
 
-                    self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+                    self.replaceItemInLibrary(scene, library, self.currentItem, newItem, newItem.points)
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
             
@@ -436,8 +433,8 @@ class EditorWidget(QWidget):
             '''Replace old group by new at scene'''
             #Get new group (In dialog old lines were removed from scene)
             newGroup = dialog.item
-            #Update group everywhere
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newGroup, newGroup.points)
+            #Update group in library
+            self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             #TODO
@@ -536,29 +533,112 @@ class EditorWidget(QWidget):
             #Get new group (In dialog old lines were removed from scene)
             newGroup = dialog.item
             #Update group everywhere
-            self.replaceItemEverywhere(scene, library, self.currentGroup, newGroup, newGroup.points)
+            self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             #TODO
             pass
     def openMirrorDialog(self, scene: QGraphicsScene, library: QListWidget):
-        if self.currentGroup == None:
+        if self.currentItem == None:
             return
         
-        #Check what figure does editor contain
-        figure = self.whatFigure(self.currentGroup)
+        figureType = self.whatFigure(self.currentItem)
+        parent: QGraphicsCustomItemGroup = self.currentItem.parentItem()
+        dialog: TranslateDialog = None
 
-        dialog = MirrorDialog(figure, self.currentGroup, self.currentGroup.points)
+        '''Send appropriate arguments depended on selectionMode'''
+        '''Seek Mixed group'''
+        if figureType == Figures.POINT:
+            
+            #Let the dialog be like to the line
+            dialog = MirrorDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, parent.points)
+    
+        elif figureType == Figures.LINE:
+
+            dialog = MirrorDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points)
+
+        elif figureType == Figures.MIXED:
+
+            dialog = MirrorDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points)
+        
         result = dialog.exec()
 
-        if result == QDialog.DialogCode.Accepted and figure == Figures.LINE:
-            #create new line based at points
-            points: list[QPointF] = dialog.points
-            newItem = AdditionalMethods.createCustomLine(points, self.scaleFactor)
-            #add item everywhere
-            self.addItemEverywhere(scene, library, newItem, points)
+
+        '''Mirror'''
+        if result == QDialog.DialogCode.Accepted and figureType == Figures.POINT:
+            
+            #Two variants: or it is a [independed item] or an [item with parent mixedgroup]
+            if isinstance(self.currentGroup, QGraphicsMixedGroup):
+                
+                oldLine = self.currentItem.parentItem()
+                new_points: list[QPointF] = dialog.points
+                newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+                mixedGroup: QGraphicsCustomItemGroup = parent.parentItem() #parent group of line
+
+                '''Replace old group by new at scene'''
+                #Get new group (In dialog old lines were removed from scene)
+                scene.removeItem(parent)
+                mixedGroup.removeFromGroup(parent)
+                mixedGroup.addToGroup(newItem)
+
+
+            elif isinstance(self.currentGroup, QGraphicsLineGroup):
+                
+                oldLine = self.currentItem.parentItem()
+                new_points: list[QPointF] = dialog.points
+                newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
                     
-        if result == QDialog.DialogCode.Accepted and figure == Figures.CUBE:
+                    self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
+
+                elif figureType == Figures.LINE:
+
+                    self.replaceItemInLibrary(scene, library, self.currentItem, newItem, newItem.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
+            
+            new_points: list[QPointF] = dialog.points
+            newItem = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+
+            if parent != None and isinstance(parent, QGraphicsMixedGroup):
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
+                    
+                    self.replaceItemInScene(scene, self.currentItem.parentItem(), newItem)
+                
+                elif figureType == Figures.LINE:
+                    
+                    self.replaceItemInScene(scene, self.currentItem, newItem)
+                
+                '''Replace old line by new in group'''
+                if figureType == Figures.POINT:
+                    
+                    parent.removeFromGroup(self.currentItem.parentItem())
+                
+                elif figureType == Figures.LINE:
+                    
+                    parent.removeFromGroup(self.currentItem)
+                
+                parent.addToGroup(newItem)
+
+            else:
+                '''Replace old line by new at scene'''
+                if figureType == Figures.POINT:
+                    self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
+                elif figureType == Figures.LINE:
+                    self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
+            
+            '''Replace old group by new at scene'''
+            #Get new group (In dialog old lines were removed from scene)
+            newGroup = dialog.item
+            #Update group everywhere
+            self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
+
+        elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             #TODO
             pass
     #Setters
