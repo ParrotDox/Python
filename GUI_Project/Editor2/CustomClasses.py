@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsEllipseItem, QGraphicsItemGroup
-from Additional import AdditionalMethods
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtWidgets import QGraphicsSceneMouseEvent
 from PySide6.QtCore import Signal, QPointF, QPoint, Qt, QRect
