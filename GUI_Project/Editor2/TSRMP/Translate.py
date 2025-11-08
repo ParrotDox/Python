@@ -1,6 +1,5 @@
 from EditorEnum import Figures
-from CustomClasses import QGraphicsCustomItemGroup, QGraphicsMixedGroup, QGraphicsLineGroup, QGraphicsCustomScene
-from Additional import AdditionalMethods
+from CustomClasses import QGraphicsCustomItemGroup, QGraphicsMixedGroup, QGraphicsLineGroup, QGraphicsCustomScene, AdditionalMethods, QGraphicsCubeGroup
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
@@ -18,10 +17,10 @@ from PySide6.QtGui import QTransform
 
 class TranslateDialog(QDialog, AdditionalMethods):
 
-    def __init__(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, groupItem: QGraphicsCustomItemGroup, points: list[QPointF]):
+    def __init__(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, groupItem: QGraphicsCustomItemGroup, points: list[QPointF], scaleFactor):
         super().__init__()
         self.initUI(figure)
-        self.setWindowTitle("TranslateDialog"); self.setFixedSize(480, 320)
+        self.setWindowTitle("TranslateDialog")
         self.setObjectName("TranslateDialog")
 
         self.scene = scene
@@ -29,6 +28,8 @@ class TranslateDialog(QDialog, AdditionalMethods):
         self.points: list[QPointF] = points
         self.item: QGraphicsCustomItemGroup = item
         self.groupItem: QGraphicsCustomItemGroup = groupItem
+        self.scaleFactor = scaleFactor
+        self.cube = None
         
     
     def initUI(self, figure: Figures):
@@ -38,7 +39,7 @@ class TranslateDialog(QDialog, AdditionalMethods):
             #widgets
             translator_X = QSpinBox(minimum=-10000, maximum=10000)
             translator_Y = QSpinBox(minimum=-10000, maximum=10000)
-            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.translate(self.scene, self.figure, self.item, self.groupItem, self.points, translator_X.value(), translator_Y.value()))
+            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.translate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, translator_X.value(), translator_Y.value(), 0))
             
             #layout
             mainLayout.addWidget(translator_X)
@@ -48,15 +49,15 @@ class TranslateDialog(QDialog, AdditionalMethods):
         elif figure == Figures.CUBE:
             
             #widgets
-            rotatorX = QSpinBox(minimum=-360, maximum=360)
-            rotatorY = QSpinBox(minimum=-360, maximum=360)
-            rotatorZ = QSpinBox(minimum=-360, maximum=360)
-            confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
+            translator_X = QSpinBox(minimum=-10000, maximum=10000)
+            translator_Y = QSpinBox(minimum=-10000, maximum=10000)
+            translator_Z = QSpinBox(minimum=-10000, maximum=10000)
+            confirm_3D = QPushButton("Confirm"); confirm_3D.clicked.connect(lambda: self.translate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, translator_X.value(), translator_Y.value(), translator_Z.value()))
             
             #layout
-            mainLayout.addWidget(rotatorX)
-            mainLayout.addWidget(rotatorY)
-            mainLayout.addWidget(rotatorZ)
+            mainLayout.addWidget(translator_X)
+            mainLayout.addWidget(translator_Y)
+            mainLayout.addWidget(translator_Z)
             mainLayout.addWidget(confirm_3D)
 
         self.setLayout(mainLayout)
@@ -64,7 +65,7 @@ class TranslateDialog(QDialog, AdditionalMethods):
         pass
     
     #Slots
-    def translate(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, group: QGraphicsCustomItemGroup, points: list[QPointF], translationX, translationY):
+    def translate(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, group: QGraphicsCustomItemGroup, points: list[QPointF], scaleFactor, translationX, translationY, translationZ):
         
         if figure == Figures.POINT:
 
@@ -106,11 +107,40 @@ class TranslateDialog(QDialog, AdditionalMethods):
 
         elif figure == Figures.MIXED:
             
-            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(group, (QGraphicsMixedGroup))
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(group, (QGraphicsMixedGroup, QGraphicsCubeGroup))
             mixedGroups.append(group)
 
             for gr in mixedGroups:
+                
+                if isinstance(gr, QGraphicsCubeGroup):
+
+                    if gr.parentItem != None:
+
+                        parent = gr.parentItem()
+
+                        old_cube: QGraphicsCubeGroup = gr
+                        tX = old_cube.tX
+                        tY = old_cube.tY
+                        tZ = old_cube.tZ
+                        sX = old_cube.sX
+                        sY = old_cube.sY
+                        sZ = old_cube.sZ
+                        rX = old_cube.rX
+                        rY = old_cube.rY
+                        rZ = old_cube.rZ
+                        camZ = old_cube.camZ
+                        scaleF = scaleFactor
+
+                        new_cube = AdditionalMethods.createCustomCube(tX + translationX, tY + translationY, tZ + translationZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+                        self.cube = new_cube
+
+                        #replace old cube by new cube
+                        parent.removeFromGroup(old_cube)
+                        scene.removeItem(old_cube)
+                        parent.addToGroup(new_cube)
+
                 for item in gr.childItems():
+
                     if isinstance(item, QGraphicsLineGroup):
 
                         #points of line
@@ -141,4 +171,23 @@ class TranslateDialog(QDialog, AdditionalMethods):
                 
                     elif isinstance(item, QGraphicsMixedGroup):
                         pass
+        
+        elif figure == Figures.CUBE:
+
+            old_cube: QGraphicsCubeGroup = item
+            tX = old_cube.tX
+            tY = old_cube.tY
+            tZ = old_cube.tZ
+            sX = old_cube.sX
+            sY = old_cube.sY
+            sZ = old_cube.sZ
+            rX = old_cube.rX
+            rY = old_cube.rY
+            rZ = old_cube.rZ
+            camZ = old_cube.camZ
+            scaleF = scaleFactor
+
+            new_cube = AdditionalMethods.createCustomCube(tX + translationX, tY + translationY, tZ + translationZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+            self.cube = new_cube
+        
         self.accept()

@@ -1,6 +1,5 @@
 from EditorEnum import Figures
-from CustomClasses import QGraphicsCustomItemGroup, QGraphicsMixedGroup, QGraphicsLineGroup, QGraphicsCustomScene
-from Additional import AdditionalMethods
+from CustomClasses import QGraphicsCustomItemGroup, QGraphicsMixedGroup, QGraphicsLineGroup, QGraphicsCustomScene, AdditionalMethods, QGraphicsCubeGroup
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
@@ -19,10 +18,10 @@ from PySide6.QtGui import QTransform
 
 class ScaleDialog(QDialog, AdditionalMethods):
 
-    def __init__(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, groupItem: QGraphicsCustomItemGroup, points: list[QPointF]):
+    def __init__(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, groupItem: QGraphicsCustomItemGroup, points: list[QPointF], scaleFactor):
         super().__init__()
         self.initUI(figure)
-        self.setWindowTitle("RotateDialog"); self.setFixedSize(480, 320)
+        self.setWindowTitle("RotateDialog")
         self.setObjectName("RotateDialog")
 
         self.scene = scene
@@ -30,6 +29,8 @@ class ScaleDialog(QDialog, AdditionalMethods):
         self.points: list[QPointF] = points
         self.item: QGraphicsCustomItemGroup = item
         self.groupItem: QGraphicsCustomItemGroup = groupItem
+        self.scaleFactor = scaleFactor
+        self.cube = None
     
     def initUI(self, figure: Figures):
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -37,17 +38,21 @@ class ScaleDialog(QDialog, AdditionalMethods):
             #widgets
             scaler_X = QDoubleSpinBox(minimum=0.1, maximum=10.0)
             scaler_Y = QDoubleSpinBox(minimum=0.1, maximum=10.0)
-            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.scale(self.scene, self.figure, self.item, self.groupItem, self.points, scaler_X.value(), scaler_Y.value()))
+            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.scale(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, scaler_X.value(), scaler_Y.value(), 0))
             #layout
             mainLayout.addWidget(scaler_X)
             mainLayout.addWidget(scaler_Y)
             mainLayout.addWidget(confirm_2D)
         elif figure == Figures.CUBE:
             #widgets
-            scalerX = QDoubleSpinBox(minimum=-360, maximum=360)
-            confirm_3D = QPushButton("Confirm"); #confirm_3D.clicked()#!!!
+            scaler_X = QDoubleSpinBox(minimum=0.1, maximum=10.0)
+            scaler_Y = QDoubleSpinBox(minimum=0.1, maximum=10.0)
+            scaler_Z = QDoubleSpinBox(minimum=0.1, maximum=10.0)
+            confirm_3D = QPushButton("Confirm"); confirm_3D.clicked.connect(lambda: self.scale(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, scaler_X.value(), scaler_Y.value(), scaler_Z.value()))
             #layout
-            mainLayout.addWidget(scalerX)
+            mainLayout.addWidget(scaler_X)
+            mainLayout.addWidget(scaler_Y)
+            mainLayout.addWidget(scaler_Z)
             mainLayout.addWidget(confirm_3D)
 
         self.setLayout(mainLayout)
@@ -55,7 +60,7 @@ class ScaleDialog(QDialog, AdditionalMethods):
         pass
     
     #Slots
-    def scale(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, group: QGraphicsCustomItemGroup, points: list[QPointF], scaleX, scaleY):
+    def scale(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, group: QGraphicsCustomItemGroup, points: list[QPointF], scaleFactor, scaleX, scaleY, scaleZ):
         
         if figure == Figures.POINT:
             
@@ -156,7 +161,36 @@ class ScaleDialog(QDialog, AdditionalMethods):
             anchorPoint = group.mapToScene(group.boundingRect().center() / scene.scaleFactor)
 
             for gr in mixedGroups:
+            
+                if isinstance(gr, QGraphicsCubeGroup):
+
+                    if gr.parentItem != None:
+
+                        parent = gr.parentItem()
+
+                        old_cube: QGraphicsCubeGroup = gr
+                        tX = old_cube.tX
+                        tY = old_cube.tY
+                        tZ = old_cube.tZ
+                        sX = old_cube.sX
+                        sY = old_cube.sY
+                        sZ = old_cube.sZ
+                        rX = old_cube.rX
+                        rY = old_cube.rY
+                        rZ = old_cube.rZ
+                        camZ = old_cube.camZ
+                        scaleF = scaleFactor
+
+                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX * scaleX, sY * scaleY, sZ * scaleZ, rX, rY, rZ, camZ, scaleF)
+                        self.cube = new_cube
+
+                        #replace old cube by new cube
+                        parent.removeFromGroup(old_cube)
+                        scene.removeItem(old_cube)
+                        parent.addToGroup(new_cube)
+
                 for item in gr.childItems():
+
                     if isinstance(item, QGraphicsLineGroup):
 
                         #points of line
@@ -189,6 +223,24 @@ class ScaleDialog(QDialog, AdditionalMethods):
                 
                     elif isinstance(item, QGraphicsMixedGroup):
                         pass
+        
+        elif figure == Figures.CUBE:
+
+            old_cube: QGraphicsCubeGroup = item
+            tX = old_cube.tX
+            tY = old_cube.tY
+            tZ = old_cube.tZ
+            sX = old_cube.sX
+            sY = old_cube.sY
+            sZ = old_cube.sZ
+            rX = old_cube.rX
+            rY = old_cube.rY
+            rZ = old_cube.rZ
+            camZ = old_cube.camZ
+            scaleF = scaleFactor
+
+            new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX * scaleX, sY * scaleY, sZ * scaleZ, rX, rY, rZ, camZ, scaleF)
+            self.cube = new_cube
         self.accept()
     
                 
