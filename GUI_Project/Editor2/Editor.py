@@ -1119,6 +1119,11 @@ class EditorWidget(QWidget):
             self.groups.remove(oldItem)
         if newItem not in self.groups:
             self.groups.append(newItem)
+
+        if oldItem in self.preparedGroups:
+            self.preparedGroups.remove(oldItem)
+        if newItem not in self.preparedGroups:
+            self.preparedGroups.append(newItem)
         pass
     def replaceItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
         #replace in library
@@ -1133,6 +1138,7 @@ class EditorWidget(QWidget):
             return
         
         else:
+            
             '''If user try to move point or line of a cube return none'''
             if self.selectMode == SelectModes.POINT:
                 if self.currentItem.parentItem().parentItem() != None:
@@ -1144,6 +1150,7 @@ class EditorWidget(QWidget):
                         return
                     
             '''Move items'''
+            print(self.currentGroup.childItems())
             if isinstance(self.currentItem, QGraphicsPointGroup) and self.selectMode == SelectModes.POINT:
                 
                 '''Update points'''
@@ -1246,7 +1253,7 @@ class EditorWidget(QWidget):
 
                             new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
 
-                            self.replaceItemEverywhere(scene, library, gr, new_cube, new_cube.points)
+                            self.replaceItemEverywhere(scene, library, old_cube, new_cube, new_cube.points)
                             self.currentItem = new_cube
                             self.currentGroup = new_cube
                             continue
@@ -1265,7 +1272,7 @@ class EditorWidget(QWidget):
                             rZ = old_cube.rZ
                             camZ = old_cube.camZ
 
-                            parent: QGraphicsMixedGroup = gr.parentItem()
+                            parent: QGraphicsMixedGroup = old_cube.parentItem()
                             new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
 
                             self.replaceItemInScene(scene, old_cube, new_cube)
@@ -1463,8 +1470,7 @@ class EditorWidget(QWidget):
         
         print("---prepareToGroup---")
         '''Get item from clicked area'''
-        group = self.selectFromGroups(filteredGroups, (QGraphicsLineGroup, QGraphicsCubeGroup, QGraphicsMixedGroup))
-        
+        group = self.selectFromGroups(filteredGroups, (QGraphicsMixedGroup, QGraphicsLineGroup, QGraphicsCubeGroup))
         '''Check if item is currently focused'''
         if group == self.currentGroup:
             return
@@ -1479,8 +1485,7 @@ class EditorWidget(QWidget):
         self.paintItem(group, self.preparedPen, self.preparedBrush)
         print(f"Items in prepared group: {len(self.preparedGroups)}")
     def groupPreparedItems(self, scene: QGraphicsScene, library: QListWidget):
-        
-        print(f"groupPreparedItems:")
+        print(f"Подготовлено для группировки: {len(self.preparedGroups)}")
         if len(self.preparedGroups) <= 1:
             pass
         
@@ -1501,20 +1506,25 @@ class EditorWidget(QWidget):
             self.preparedGroups = []
             #Paint default
             self.paintItem(mixedGroup, self.defaultPen, self.defaultBrush)
+            self.currentItem = None
+            self.currentGroup = None
             #Prevent future deletion
             self.groups.append(mixedGroup)
     def ungroup(self, scene: QGraphicsScene, library: QListWidget, group: QGraphicsItem):
-        if isinstance(group, QGraphicsMixedGroup) and not isinstance(group, QGraphicsCubeGroup):
+        if isinstance(group, QGraphicsMixedGroup):
+            # Пропускаем группы, у которых есть родитель (они разгруппируются рекурсивно)
+            if group.parentItem() is not None:
+                return
             '''Add separated items to library and remove from group'''
-            children = group.childItems(); print(f"QUANTITY OF GROUPS TO UNGROUP: {len(children)}")
+            children = group.childItems()
+            print(len(children))
             for chld in children:
                 group.removeFromGroup(chld)
                 self.addItemToLibrary(library, chld, chld.points)
                 self.paintItem(chld, self.defaultPen, self.defaultBrush)
             
-            self.deleteItemFromScene(scene, group)
+            self.deleteItemEverywhere(scene, library, group)
             self.groups.remove(group)
-            self.deleteItemFromLibrary(library, group)
             library.clearFocus()
 
             '''Set to default'''
