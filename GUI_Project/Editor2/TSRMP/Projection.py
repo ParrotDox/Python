@@ -30,6 +30,7 @@ class ProjectionDialog(QDialog, AdditionalMethods):
         self.initUI(figure)
         self.setWindowTitle("ProjectionDialog")
         self.setObjectName("ProjectionDialog")
+        self.setMinimumWidth(200)
 
         self.scene = scene
         self.figure = figure
@@ -41,30 +42,90 @@ class ProjectionDialog(QDialog, AdditionalMethods):
     
     def initUI(self, figure):
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        if figure == Figures.POINT or figure == Figures.LINE or figure == Figures.MIXED:
+        if figure == Figures.POINT or figure == Figures.LINE:
             #widgets
             projectedXZ = QRadioButton("Project to XZ")
             projectedYZ = QRadioButton("Project to YZ")
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.project(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, projectedXZ.isChecked(), projectedYZ.isChecked(), False))
+            confirm_2D.setFixedHeight(35)
             #layout
-            mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
             mainLayout.addWidget(projectedXZ)
             mainLayout.addWidget(projectedYZ)
             mainLayout.addWidget(confirm_2D)
-        elif figure == Figures.CUBE:
+        elif figure == Figures.CUBE or figure == Figures.MIXED:
             #widgets
             projectedXZ = QRadioButton("Project to XZ")
             projectedYZ = QRadioButton("Project to YZ")
             projectedXY = QRadioButton("Project to XY")
             confirm_3D = QPushButton("Confirm"); confirm_3D.clicked.connect(lambda: self.project(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, projectedXZ.isChecked(), projectedYZ.isChecked(), projectedXY.isChecked()))
+            confirm_3D.setFixedHeight(35)
             #layout
-            mainLayout = QVBoxLayout()
+            mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
             mainLayout.addWidget(projectedXZ)
             mainLayout.addWidget(projectedYZ)
             mainLayout.addWidget(projectedXY)
             mainLayout.addWidget(confirm_3D)
         self.setLayout(mainLayout)
+        
         #StyleSheets
+        dialog_stylesheet = (
+            'QDialog {'
+            'background-color: #FFFFFF;'
+            '}'
+        )
+        label_stylesheet = (
+            'QLabel {'
+            'color: #132238;'
+            'font-family: "Work Sans";'
+            'font-size: 18px;' 
+            '}'
+        )
+        button_stylesheet = (
+            'QPushButton {'
+            'background-color: #EEEEEE;'
+            'color: #132238;'
+            'border-radius: 12px;'
+            'font-family: "Work Sans";'
+            'font-size: 12px;' 
+            'font-weight: bold;'
+            '}'
+            
+            'QPushButton:hover {'
+            'background-color: #A53DFF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+            'QPushButton:pressed {'
+            'background-color: #632599;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+
+            'QPushButton:checked {'
+            'background-color: #DBB1FF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+        )
+        radioButton_stylesheet = (
+            'QRadioButton {'
+                'color: #132238;'
+                'font-family: "Work Sans";'
+                'font-size: 16px;'
+                'spacing: 8px;'
+            '}'
+
+            'QRadioButton::indicator {'
+                'border: 2px solid #632599;'
+                'border-radius: 3px;'
+                'background-color: #DBB1FF;'
+            '}'
+
+            'QRadioButton::indicator:checked {'
+                'background-color: #632599;'
+                'border: 2px solid #632599;'
+            '}'
+        )
+        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + radioButton_stylesheet
+        self.setStyleSheet(styleSheet)
         pass
     
     #Slots
@@ -98,7 +159,7 @@ class ProjectionDialog(QDialog, AdditionalMethods):
 
                 if isinstance(gr, QGraphicsCubeGroup):
 
-                    if gr.parentItem != None:
+                    if gr.parentItem() != None:
 
                         parent = gr.parentItem()
 
@@ -121,7 +182,7 @@ class ProjectionDialog(QDialog, AdditionalMethods):
                         camZ = old_cube.camZ
                         scaleF = scaleFactor
 
-                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX * scaleX, sY * scaleY, sZ * scaleZ, rX, rY, rZ, camZ, scaleF)
+                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
                         self.cube = new_cube
 
                         #replace old cube by new cube

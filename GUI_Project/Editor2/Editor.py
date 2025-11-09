@@ -76,26 +76,28 @@ class EditorWidget(QWidget):
  
     def initUI(self):
         #widgets
-        buttonCreate = QPushButton("C"); buttonCreate.setFixedSize(35,35); buttonCreate.clicked.connect(lambda: self.openCreateDialog(scene, library))
-        buttonUpdate = QPushButton("U"); buttonUpdate.setFixedSize(35,35); buttonUpdate.clicked.connect(lambda: self.openUpdateDialog(scene, library))
-        buttonDelete = QPushButton("D"); buttonDelete.setFixedSize(35,35); buttonDelete.clicked.connect(lambda: self.deleteCurrentItem(scene, library))
+        buttonCreate = QPushButton("C"); buttonCreate.setFixedSize(45,45); buttonCreate.clicked.connect(lambda: self.openCreateDialog(scene, library))
+        buttonUpdate = QPushButton("U"); buttonUpdate.setFixedSize(45,45); buttonUpdate.clicked.connect(lambda: self.openUpdateDialog(scene, library))
+        buttonDelete = QPushButton("D"); buttonDelete.setFixedSize(45,45); buttonDelete.clicked.connect(lambda: self.deleteCurrentItem(scene, library))
 
-        buttonTranslate = QPushButton("T"); buttonTranslate.setFixedSize(35,35); buttonTranslate.clicked.connect(lambda: self.openTranslateDialog(scene, library))
-        buttonScale = QPushButton("S"); buttonScale.setFixedSize(35,35); buttonScale.clicked.connect(lambda: self.openScaleDialog(scene, library))
-        buttonRotate = QPushButton("R"); buttonRotate.setFixedSize(35,35); buttonRotate.clicked.connect(lambda: self.openRotateDialog(scene, library))
-        buttonMirror = QPushButton("M"); buttonMirror.setFixedSize(35,35); buttonMirror.clicked.connect(lambda: self.openMirrorDialog(scene, library))
-        buttonProjection = QPushButton("P"); buttonProjection.setFixedSize(35,35); buttonProjection.clicked.connect(lambda: self.openProjectionDialog(scene, library))
+        buttonTranslate = QPushButton("T"); buttonTranslate.setFixedSize(45,45); buttonTranslate.clicked.connect(lambda: self.openTranslateDialog(scene, library))
+        buttonScale = QPushButton("S"); buttonScale.setFixedSize(45,45); buttonScale.clicked.connect(lambda: self.openScaleDialog(scene, library))
+        buttonRotate = QPushButton("R"); buttonRotate.setFixedSize(45,45); buttonRotate.clicked.connect(lambda: self.openRotateDialog(scene, library))
+        buttonMirror = QPushButton("M"); buttonMirror.setFixedSize(45,45); buttonMirror.clicked.connect(lambda: self.openMirrorDialog(scene, library))
+        buttonProjection = QPushButton("P"); buttonProjection.setFixedSize(45,45); buttonProjection.clicked.connect(lambda: self.openProjectionDialog(scene, library))
 
-        buttonPoint = QOneWayToggleButton(self.createIcon("Icons/point.png", 35, 35), ""); buttonPoint.setFixedSize(35,35); buttonPoint.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.POINT)); buttonPoint.setCheckable(True); buttonPoint.setChecked(False)
-        buttonLine = QOneWayToggleButton(self.createIcon("Icons/line.png", 35, 35), ""); buttonLine.setFixedSize(35,35); buttonLine.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.LINE)); buttonLine.setCheckable(True); buttonLine.setChecked(True)
-        buttonMixed = QOneWayToggleButton(self.createIcon("Icons/group.png", 35, 35), ""); buttonMixed.setFixedSize(35,35); buttonMixed.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.MIXED)); buttonMixed.setCheckable(True); buttonMixed.setChecked(False)
+        buttonPoint = QOneWayToggleButton(self.createIcon("Icons/point.png", 45, 45), ""); buttonPoint.setFixedSize(45,45); buttonPoint.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.POINT)); buttonPoint.setCheckable(True); buttonPoint.setChecked(False)
+        buttonLine = QOneWayToggleButton(self.createIcon("Icons/line.png", 45, 45), ""); buttonLine.setFixedSize(45,45); buttonLine.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.LINE)); buttonLine.setCheckable(True); buttonLine.setChecked(True)
+        buttonMixed = QOneWayToggleButton(self.createIcon("Icons/group.png", 45, 45), ""); buttonMixed.setFixedSize(45,45); buttonMixed.clicked.connect(lambda:self.setSelectMode(self.selectModeButtons, SelectModes.MIXED)); buttonMixed.setCheckable(True); buttonMixed.setChecked(False)
         self.selectModeButtons.extend([buttonPoint, buttonLine, buttonMixed])
 
-        buttonGroup = QPushButton(self.createIcon("Icons/pack.png", 35, 35), ""); buttonGroup.setFixedSize(35,35); buttonGroup.clicked.connect(lambda: self.groupPreparedItems(scene, library))
-        buttonUngroup = QPushButton(self.createIcon("Icons/unpack.png", 35, 35), ""); buttonUngroup.setFixedSize(35,35); buttonUngroup.clicked.connect(lambda: self.ungroup(scene, library, self.currentGroup))
+        buttonGroup = QPushButton(self.createIcon("Icons/pack.png", 45, 45), ""); buttonGroup.setFixedSize(45,45); buttonGroup.clicked.connect(lambda: self.groupPreparedItems(scene, library))
+        buttonUngroup = QPushButton(self.createIcon("Icons/unpack.png", 45, 45), ""); buttonUngroup.setFixedSize(45,45); buttonUngroup.clicked.connect(lambda: self.ungroup(scene, library, self.currentGroup))
 
         scene = QGraphicsCustomScene(QRect(-1000*self.scaleFactor,-1000*self.scaleFactor,2000*self.scaleFactor,2000*self.scaleFactor), self.scaleFactor, self.defaultPen, self.crossPen)
         view = QGraphicsCustomView(scene); view.scale(1, -1)
+        view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         view.itemFocused.connect(lambda scene, filteredGroups, point: self.setCurrentItemByCSM(scene, library, filteredGroups, point))
         view.itemFocusedToGroup.connect(lambda scene, filteredGroups, point: self.prepareToGroup(scene, library, filteredGroups, point))
         view.itemMoved.connect(lambda leftMousePos, delta: self.moveItemsAtScene(scene, library, view, leftMousePos, delta))
@@ -110,7 +112,7 @@ class EditorWidget(QWidget):
         workspaceLayout = QVBoxLayout()
         libraryLayout = QHBoxLayout()
 
-        actionsLayout = QHBoxLayout(); actionsLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        actionsLayout = QHBoxLayout(); actionsLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         cudLayout = QHBoxLayout()
         tsrmpLayout = QHBoxLayout()
         selectModeLayout = QHBoxLayout()
@@ -121,6 +123,7 @@ class EditorWidget(QWidget):
         mainLayout.addLayout(workspaceLayout); mainLayout.addLayout(libraryLayout)
         mainLayout.setStretchFactor(workspaceLayout, 3); mainLayout.setStretchFactor(libraryLayout, 1)
 
+        actionsLayout.setContentsMargins(10, 10, 10, 10)
         actionsLayout.addLayout(cudLayout); actionsLayout.addSpacing(15)
         actionsLayout.addLayout(tsrmpLayout); actionsLayout.addSpacing(15)
         actionsLayout.addLayout(selectModeLayout); actionsLayout.addSpacing(15)
@@ -133,6 +136,7 @@ class EditorWidget(QWidget):
         selectModeLayout.addWidget(buttonPoint); selectModeLayout.addWidget(buttonLine); selectModeLayout.addWidget(buttonMixed)
         groupLayout.addWidget(buttonGroup); groupLayout.addWidget(buttonUngroup)
 
+        workspaceLayout.setContentsMargins(10, 0, 30, 0)
         workspaceLayout.addLayout(actionsLayout); workspaceLayout.addWidget(view)
 
         objectsLayout.addWidget(objectsLabel); objectsLayout.addWidget(library)
@@ -141,7 +145,75 @@ class EditorWidget(QWidget):
 
 
         #StyleSheets
-        styleSheet = ""
+        editor_stylesheet = (
+            'QWidget#Editor {'
+            'background-color: #FFFFFF;'
+            '}'
+        )
+        label_stylesheet = (
+            'QLabel {'
+            'color: #132238;'
+            'font-family: "Work Sans";'
+            'font-size: 18px;' 
+            '}'
+        )
+        button_stylesheet = (
+            'QPushButton {'
+            'background-color: #EEEEEE;'
+            'color: #132238;'
+            'border-radius: 12px;'
+            'font-family: "Work Sans";'
+            'font-size: 12px;' 
+            'font-weight: bold;'
+            '}'
+            
+            'QPushButton:hover {'
+            'background-color: #A53DFF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+            'QPushButton:pressed {'
+            'background-color: #632599;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+
+            'QPushButton:checked {'
+            'background-color: #DBB1FF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+        )
+        view_stylesheet = (
+            'QGraphicsView {'
+            'border: 5px solid #EEEEEE;'
+            'border-radius: 5px;'
+            '}'
+        )
+        library_stylesheet = (
+            'QListWidget {'
+            'background-color: #EEEEEE;'
+            'border: 5px solid #EEEEEE;'
+            'border-radius: 8px'
+            '}'
+            'QListWidget::item {'
+            'background-color: #FFFFFF;'
+            'padding: 10px 15px;'
+            'margin: 0px 0px 5px 0px;'
+            'font-size: 16px;'
+            'border-radius: 5px;'
+            '}'
+            'QListWidget::item:hover {'
+            'background-color: #A53DFF;'
+            'padding: 10px 15px;'
+            '}'
+            'QListWidget::item:selected {'
+            'background-color: #DBB1FF;'
+            'color: #132238;'
+            'padding: 10px 15px;'
+            '}'
+        )
+        styleSheet = (editor_stylesheet + label_stylesheet 
+                      + button_stylesheet + view_stylesheet
+                      + library_stylesheet)
+        
         self.setStyleSheet(styleSheet)
         pass
     #Colors
@@ -151,25 +223,25 @@ class EditorWidget(QWidget):
         self.preparedPen = QPen(); self.preparedBrush = QBrush()
         self.crossPen = QPen(); self.crossBrush = QBrush()
 
-        self.defaultPen.setColor(QColor(20, 20, 20))
+        self.defaultPen.setColor(QColor(19, 34, 56))
         self.defaultPen.setWidth(1)
         self.defaultPen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        self.defaultBrush.setColor(QColor(50, 50, 50))
+        self.defaultBrush.setColor(QColor(19, 34, 56))
 
-        self.focusedPen.setColor(QColor(220, 0, 0))
+        self.focusedPen.setColor(QColor(165, 61, 255))
         self.focusedPen.setWidth(3)
         self.focusedPen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        self.focusedBrush.setColor(QColor(220, 0, 0))
+        self.focusedBrush.setColor(QColor(165, 61, 255))
 
-        self.preparedPen.setColor(QColor(0, 200, 0))
+        self.preparedPen.setColor(QColor(0, 195, 208))
         self.preparedPen.setWidth(3)
         self.preparedPen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        self.preparedBrush.setColor(QColor(0, 200, 0))
+        self.preparedBrush.setColor(QColor(0, 195, 208))
 
-        self.crossPen.setColor(QColor(100, 100, 100))
-        self.crossPen.setWidth(3)
+        self.crossPen.setColor(QColor(19, 34, 56))
+        self.crossPen.setWidth(4)
         self.crossPen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        self.crossBrush.setColor(QColor(0, 200, 100))
+        self.crossBrush.setColor(QColor(19, 34, 56))
     def paintItem(self, item: QGraphicsItem, pen: QPen, brush: QBrush):
         items: list[QGraphicsItem] = self.getAllBaseChildItems(item)
         for it in items:
@@ -483,11 +555,24 @@ class EditorWidget(QWidget):
         '''Send appropriate arguments depended on selectionMode'''
         '''Seek Mixed group'''
         if figureType == Figures.POINT:
-
+            
             dialog = RotateDialog(scene, Figures.POINT, self.currentItem, self.currentGroup, parent.points, self.scaleFactor)
             #Point can't exist without a parent line
             if parent.parentItem() != None:
                 parent = parent.parentItem() #Got QMixedGroup
+            
+            #If has 3D -> prevent rotation
+
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+            mixedGroups.append(self.currentGroup)
+
+            for gr in mixedGroups:
+
+                for item in gr.childItems():
+
+                    if isinstance(item, QGraphicsCubeGroup):
+
+                        return
     
         elif figureType == Figures.LINE:
 
@@ -592,14 +677,27 @@ class EditorWidget(QWidget):
             
             #Let the dialog be like to the line
             dialog = MirrorDialog(scene, Figures.POINT, self.currentItem, self.currentGroup, parent.points, self.scaleFactor)
+
+            #If has 3D -> prevent rotation
+
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+            mixedGroups.append(self.currentGroup)
+
+            for gr in mixedGroups:
+
+                for item in gr.childItems():
+
+                    if isinstance(item, QGraphicsCubeGroup):
+
+                        return
     
         elif figureType == Figures.LINE:
 
-            dialog = MirrorDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
+            dialog = MirrorDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
         elif figureType == Figures.MIXED:
 
-            dialog = MirrorDialog(scene, Figures.CUBE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
+            dialog = MirrorDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
         
         elif figureType == Figures.CUBE:
 
@@ -820,10 +918,14 @@ class EditorWidget(QWidget):
 
             currentItem = self.selectFromGroups(filteredGroups, (QGraphicsPointGroup))
             currentGroup = self.selectFromGroups(filteredGroups, (QGraphicsCubeGroup, QGraphicsMixedGroup, QGraphicsLineGroup))
+            
             '''If no selected group'''
             if currentItem is None and self.currentGroup is None:
                 return
             
+            '''If tried to select point of cube'''
+            if isinstance(currentGroup, QGraphicsCubeGroup):
+                return
             '''Check if item in a preparation group'''
             if currentGroup in self.preparedGroups:
                 self.preparedGroups.remove(currentGroup)
@@ -962,14 +1064,6 @@ class EditorWidget(QWidget):
         
         '''Paint focused'''
         self.paintItem(self.currentGroup, self.focusedPen, self.focusedBrush)
-    def setLibraryItemName(self, library: QListWidget, item: QGraphicsItemGroup, text: str):
-        #update text in widgetList element
-        listItems = library.findItems("", Qt.MatchFlag.MatchContains)
-        for it in listItems:
-            data = it.data(Qt.ItemDataRole.UserRole)
-            if data["item"] == item:
-                it.setText(f"{text} {data['item']}")
-            break
     def setFocusAtLibraryByItem(self, library: QListWidget, item: QGraphicsItemGroup):
         listItems = library.findItems("", Qt.MatchFlag.MatchContains)
         for it in listItems:
@@ -986,9 +1080,11 @@ class EditorWidget(QWidget):
                     "item": item,
                     "points": points
                 }
-        item = QListWidgetItem(f"Item: {item}")
-        item.setData(Qt.ItemDataRole.UserRole, data)
-        library.addItem(item)
+        
+        listItem = QListWidgetItem(f"Item: {item}")
+        listItem.setText(item.equation)
+        listItem.setData(Qt.ItemDataRole.UserRole, data)
+        library.addItem(listItem)
     def addItemToScene(self, scene: QGraphicsScene, item: QGraphicsItemGroup):
         print(f"AddItemToScene: {item}")
         scene.addItem(item)
@@ -1012,7 +1108,7 @@ class EditorWidget(QWidget):
                 data["item"] = newItem
                 data["points"] = points
                 it.setData(Qt.ItemDataRole.UserRole, data)
-                self.setLibraryItemName(library, newItem, "")
+                it.setText(newItem.equation)
                 break
         self.setFocusAtLibraryByItem(library, newItem)
     def replaceItemInScene(self, scene: QGraphicsScene, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup):
@@ -1233,11 +1329,6 @@ class EditorWidget(QWidget):
         scene.removeItem(item)
         self.currentGroup = None
         self.currentItem = None
-        
-        if isinstance(item, QGraphicsMixedGroup):
-            groups = AdditionalMethods.getAllChildItemsByCategory(item, (QGraphicsMixedGroup)); groups.append(item)
-            for gr in groups:
-                self.groups.remove(gr)
     def deleteItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, item: QGraphicsItem):
         print(f"deleteItemEverywhere: {item}")
         #delete from library
@@ -1260,8 +1351,47 @@ class EditorWidget(QWidget):
         
         savedPreparedItemsToPaint = []
         for parentItem in sceneItems:
-            if isinstance(parentItem, QGraphicsMixedGroup):
+            
+            if isinstance(parentItem, QGraphicsCubeGroup):
+                
+                parent = parentItem.parentItem()
+                old_cube: QGraphicsCubeGroup = parentItem
+                tX = old_cube.tX
+                tY = old_cube.tY
+                tZ = old_cube.tZ
+                sX = old_cube.sX
+                sY = old_cube.sY
+                sZ = old_cube.sZ
+                rX = old_cube.rX
+                rY = old_cube.rY
+                rZ = old_cube.rZ
+                camZ = old_cube.camZ
+                scaleF = self.scaleFactor
+                new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+                self.cube = new_cube
+                
+                if parent != None:
+                    #replace old cube by new cube
+                    parent.removeFromGroup(old_cube)
+                    self.deleteItemFromScene(scene, old_cube)
+                    parent.addToGroup(new_cube)
+                else:
+                    self.replaceItemEverywhere(scene, library, old_cube, new_cube, new_cube.points)
+                
+                '''Save new prepared MixedGroup'''
+                if parentItem in currentPreparedItems:
+                        
+                    savedPreparedItemsToPaint.append(new_cube)
+
+                '''Replace old focused object to new'''
+                if currentFocusedItem == parentItem:
+
+                    currentFocusedItem = new_cube 
+
+            if isinstance(parentItem, QGraphicsMixedGroup) and not isinstance(parentItem, QGraphicsCubeGroup):
                 for chld in parentItem.childItems():
+                    if isinstance(chld, QGraphicsCubeGroup):
+                        continue
                     if isinstance(chld, QGraphicsMixedGroup):
                         
                         '''Replace old focused object to new'''
@@ -1272,6 +1402,7 @@ class EditorWidget(QWidget):
                         if chld in currentPreparedItems:
                         
                             savedPreparedItemsToPaint.append(chld)
+                    
                     elif isinstance(chld, QGraphicsLineGroup):
                         
                         '''Create new item and replace old everywhere'''
@@ -1315,10 +1446,14 @@ class EditorWidget(QWidget):
         #set focus from old to new item
         self.setCurrentItemByCSM(scene, library, [currentFocusedItem], QPointF())
     def redrawEverything(self, scene: QGraphicsCustomScene, library: QListWidget, scaleFactor: float, deltaY: float, defaultPen: QPen, crossPen: QPen):
-        print(f"redrawEverything:")
+        print(f"redrawEverything:") 
         if deltaY > 0:
+            if scaleFactor * 1.1 >= 90:
+                return
             self.scaleFactor = scaleFactor * 1.1
         elif deltaY < 0:
+            if scaleFactor * 0.9 <= 20:
+                return
             self.scaleFactor = scaleFactor * 0.9
         self.redrawGrid(scene, self.scaleFactor, defaultPen, crossPen)
         self.redrawItems(scene, library)
@@ -1359,6 +1494,7 @@ class EditorWidget(QWidget):
                 self.deleteItemFromLibrary(library, gr)
                 #Add to mixed group
                 mixedGroup.addToGroup(gr)
+            
             #Replace by one item
             self.addItemEverywhere(scene, library, mixedGroup, mixedGroup.points)
             #Clear prepared groups
@@ -1370,21 +1506,21 @@ class EditorWidget(QWidget):
     def ungroup(self, scene: QGraphicsScene, library: QListWidget, group: QGraphicsItem):
         if isinstance(group, QGraphicsMixedGroup) and not isinstance(group, QGraphicsCubeGroup):
             '''Add separated items to library and remove from group'''
-            children = group.childItems()
+            children = group.childItems(); print(f"QUANTITY OF GROUPS TO UNGROUP: {len(children)}")
             for chld in children:
                 group.removeFromGroup(chld)
                 self.addItemToLibrary(library, chld, chld.points)
                 self.paintItem(chld, self.defaultPen, self.defaultBrush)
             
+            self.deleteItemFromScene(scene, group)
+            self.groups.remove(group)
+            self.deleteItemFromLibrary(library, group)
+            library.clearFocus()
 
             '''Set to default'''
             self.currentItem = None
             self.currentGroup = None
 
-            self.deleteItemFromLibrary(library, group)
-            library.clearFocus()
-
-            self.groups.remove(group)
     #Additional methods
     def getAllBaseChildItems(self, item: QGraphicsItem):
         '''Returns all base items of group'''

@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QGraphicsScene,
     QGraphicsLineItem,
-    QGraphicsItemGroup
+    QGraphicsItemGroup,
+    QLabel
 )
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QTransform
@@ -22,6 +23,7 @@ class RotateDialog(QDialog, AdditionalMethods):
         self.initUI(figure)
         self.setWindowTitle("RotateDialog")
         self.setObjectName("RotateDialog")
+        self.setMinimumWidth(200)
 
         self.scene = scene
         self.figure = figure
@@ -32,33 +34,94 @@ class RotateDialog(QDialog, AdditionalMethods):
         self.cube = None
     
     def initUI(self, figure: Figures):
-        mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
         if figure == Figures.POINT or figure == Figures.LINE or figure == Figures.MIXED:
+            
             #widgets
-            rotator = QSpinBox(minimum=-360, maximum=360)
+            rotator = QSpinBox(minimum=-360, maximum=360); rotator.setMinimumWidth(50); rotator.setMinimumHeight(35)
+            label_r = QLabel("Rotate by")
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.rotate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, rotator.value(), 0, 0))
+            confirm_2D.setFixedHeight(35)
             #layout
+            mainLayout.addWidget(label_r)
             mainLayout.addWidget(rotator)
+            
             mainLayout.addWidget(confirm_2D)
         elif figure == Figures.CUBE:
+            
             #widgets
-            rotatorX = QSpinBox(minimum=-360, maximum=360)
-            rotatorY = QSpinBox(minimum=-360, maximum=360)
-            rotatorZ = QSpinBox(minimum=-360, maximum=360)
+            rotatorX = QSpinBox(minimum=-360, maximum=360); rotatorX.setMinimumWidth(50); rotatorX.setMinimumHeight(35)
+            rotatorY = QSpinBox(minimum=-360, maximum=360); rotatorY.setMinimumWidth(50); rotatorY.setMinimumHeight(35)
+            rotatorZ = QSpinBox(minimum=-360, maximum=360); rotatorZ.setMinimumWidth(50); rotatorZ.setMinimumHeight(35)
+            label_rX = QLabel("Rotate x")
+            label_rY = QLabel("Rotate y")
+            label_rZ = QLabel("Rotate z")
             confirm_3D = QPushButton("Confirm"); confirm_3D.clicked.connect(lambda: self.rotate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, rotatorX.value(), rotatorY.value(), rotatorZ.value()))
+            confirm_3D.setFixedHeight(35)
             #layout
+            mainLayout.addWidget(label_rX)
             mainLayout.addWidget(rotatorX)
+            mainLayout.addWidget(label_rY)
             mainLayout.addWidget(rotatorY)
+            mainLayout.addWidget(label_rZ)
             mainLayout.addWidget(rotatorZ)
             mainLayout.addWidget(confirm_3D)
 
         self.setLayout(mainLayout)
         #StyleSheets
+        dialog_stylesheet = (
+            'QDialog {'
+            'background-color: #FFFFFF;'
+            '}'
+        )
+        label_stylesheet = (
+            'QLabel {'
+            'color: #132238;'
+            'font-family: "Work Sans";'
+            'font-size: 18px;' 
+            '}'
+        )
+        button_stylesheet = (
+            'QPushButton {'
+            'background-color: #EEEEEE;'
+            'color: #132238;'
+            'border-radius: 12px;'
+            'font-family: "Work Sans";'
+            'font-size: 12px;' 
+            'font-weight: bold;'
+            '}'
+            
+            'QPushButton:hover {'
+            'background-color: #A53DFF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+            'QPushButton:pressed {'
+            'background-color: #632599;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+
+            'QPushButton:checked {'
+            'background-color: #DBB1FF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+        )
+        spinBox_stylesheet = (
+            'QSpinBox {'
+                'font-size: 16px;'
+                'color: #132238;'
+                'background-color: #DBB1FF;'
+                'border: 0x solid #DBB1FF;'
+                'border-radius: 2px;' \
+                'padding-left: 5px;'
+            '}'
+            )
+        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + spinBox_stylesheet
+        self.setStyleSheet(styleSheet)
         pass
     
     #Slots
     def rotate(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, group: QGraphicsCustomItemGroup, points: list[QPointF], scaleFactor, rotateX, rotateY, rotateZ):
-        
+
         if figure == Figures.POINT:
             
             #If group is a MixedGroup
@@ -68,8 +131,11 @@ class RotateDialog(QDialog, AdditionalMethods):
                 mixedGroups.append(group)
                 anchorPoint = item.mapToScene(item.boundingRect().center() / scene.scaleFactor)
 
+
                 for gr in mixedGroups:
+                    
                     for item in gr.childItems():
+                        
                         if isinstance(item, QGraphicsLineGroup):
 
                             #points of line

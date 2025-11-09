@@ -142,7 +142,8 @@ class QGraphicsCustomItemGroup(QGraphicsItemGroup):
         self.brush = None
         self.scaleFactor = 1
         self.points: list[QPointF] = []
-        self.baseChildItems = []    #Base child items (QGEllipse, QGLine etc.) 
+        self.baseChildItems = []    #Base child items (QGEllipse, QGLine etc.)
+        self.equation: str = ""
 '''Every class indicates to program that it works with a [line, point, cube, mixed item]'''
 class QGraphicsLineGroup(QGraphicsCustomItemGroup):
     def __init__(self):
@@ -153,6 +154,7 @@ class QGraphicsPointGroup(QGraphicsCustomItemGroup):
 class QGraphicsMixedGroup(QGraphicsCustomItemGroup):
     def __init__(self):
         super().__init__()
+        self.equation = "MIXED GROUP"
         
     def addToGroup(self, item):
         if isinstance(item, (QGraphicsMixedGroup, QGraphicsCubeGroup, QGraphicsLineGroup, QGraphicsPointGroup)):
@@ -167,6 +169,7 @@ class QGraphicsMixedGroup(QGraphicsCustomItemGroup):
                     continue
                 else:
                     self.baseChildItems.append(chld)
+
         return super().addToGroup(item)
     def removeFromGroup(self, item):
         if isinstance(item, (QGraphicsMixedGroup, QGraphicsCubeGroup, QGraphicsLineGroup, QGraphicsPointGroup)):
@@ -178,11 +181,13 @@ class QGraphicsMixedGroup(QGraphicsCustomItemGroup):
                 if pt in self.baseChildItems:
                     self.baseChildItems.remove(chld)
 
+
         return super().removeFromGroup(item)
 class QGraphicsCubeGroup(QGraphicsMixedGroup):
     def __init__(self, scaleFactor, tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ):
         super().__init__()
 
+        self.equation = f"CUBE: (tX = {tX}, tY = {tY})"
         self.scaleFactor = scaleFactor
         self.tX = tX
         self.tY = tY
@@ -419,6 +424,7 @@ class AdditionalMethods():
         group.scaleFactor = scaleFactor
         group.points = points
         group.baseChildItems = ellipseStart, ellipseEnd, lineItem
+        group.equation = f"LINE: x - {round(points[0].x(), 2)} / {round(points[1].x() - points[0].x(), 2)} = y - {round(points[0].y(), 2)} / {round(points[1].y() - points[0].y(), 2)}"
         return group
     @staticmethod
     def createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleFactor):
@@ -437,6 +443,7 @@ class AdditionalMethods():
         '''Update metadata'''
         cube.scaleFactor = scaleFactor
         cube.baseChildItems = lines
+        cube.equation = f"CUBE: (tX = {round(tX, 2)}, tY = {round(tY, 2)})"
 
         '''Update group'''
         cube.updateCube(projected_points, lines)

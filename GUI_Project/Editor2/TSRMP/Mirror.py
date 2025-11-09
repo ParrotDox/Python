@@ -29,6 +29,7 @@ class MirrorDialog(QDialog, AdditionalMethods):
         self.initUI(figure)
         self.setWindowTitle("MirrorDialog")
         self.setObjectName("MirrorDialog")
+        self.setMinimumWidth(200)
 
         self.scene = scene
         self.figure = figure
@@ -42,11 +43,12 @@ class MirrorDialog(QDialog, AdditionalMethods):
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         if figure == Figures.POINT or figure == Figures.LINE or figure == Figures.MIXED:
             #widgets
-            mirrorer_X = QCheckBox("Mirror X")
-            mirrorer_Y = QCheckBox("Mirror Y")
+            mirrorer_X = QCheckBox("Mirror X"); mirrorer_X.setMinimumWidth(25)
+            mirrorer_Y = QCheckBox("Mirror Y"); mirrorer_X.setMinimumWidth(25)
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.mirror(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, mirrorer_X.isChecked(), mirrorer_Y.isChecked(), False))
+            confirm_2D.setFixedHeight(35)
             #layout
-            mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
             mainLayout.addWidget(mirrorer_X)
             mainLayout.addWidget(mirrorer_Y)
             mainLayout.addWidget(confirm_2D)
@@ -56,14 +58,72 @@ class MirrorDialog(QDialog, AdditionalMethods):
             mirrorer_Y = QCheckBox("Mirror Y")
             mirrorer_Z = QCheckBox("Mirror Z")
             confirm_3D = QPushButton("Confirm"); confirm_3D.clicked.connect(lambda: self.mirror(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, mirrorer_X.isChecked(), mirrorer_Y.isChecked(), mirrorer_Z.isChecked()))
+            confirm_3D.setFixedHeight(35)
             #layout
-            mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
             mainLayout.addWidget(mirrorer_X)
             mainLayout.addWidget(mirrorer_Y)
             mainLayout.addWidget(mirrorer_Z)
             mainLayout.addWidget(confirm_3D)
         self.setLayout(mainLayout)
         #StyleSheets
+        dialog_stylesheet = (
+            'QDialog {'
+            'background-color: #FFFFFF;'
+            '}'
+        )
+        label_stylesheet = (
+            'QLabel {'
+            'color: #132238;'
+            'font-family: "Work Sans";'
+            'font-size: 18px;' 
+            '}'
+        )
+        button_stylesheet = (
+            'QPushButton {'
+            'background-color: #EEEEEE;'
+            'color: #132238;'
+            'border-radius: 12px;'
+            'font-family: "Work Sans";'
+            'font-size: 12px;' 
+            'font-weight: bold;'
+            '}'
+            
+            'QPushButton:hover {'
+            'background-color: #A53DFF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+            'QPushButton:pressed {'
+            'background-color: #632599;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+
+            'QPushButton:checked {'
+            'background-color: #DBB1FF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+        )
+        checkBox_stylesheet = (
+            'QCheckBox {'
+                'color: #132238;'
+                'font-family: "Work Sans";'
+                'font-size: 16px;'
+                'spacing: 8px;'
+            '}'
+
+            'QCheckBox::indicator {'
+                'border: 2px solid #632599;'
+                'border-radius: 3px;'
+                'background-color: #DBB1FF;'
+            '}'
+
+            'QCheckBox::indicator:checked {'
+                'background-color: #632599;'
+                'border: 2px solid #632599;'
+            '}'
+        )
+        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + checkBox_stylesheet
+        self.setStyleSheet(styleSheet)
         pass
     
     #Slots
@@ -101,7 +161,7 @@ class MirrorDialog(QDialog, AdditionalMethods):
                 
                 if isinstance(gr, QGraphicsCubeGroup):
 
-                    if gr.parentItem != None:
+                    if gr.parentItem() != None:
 
                         parent = gr.parentItem()
 

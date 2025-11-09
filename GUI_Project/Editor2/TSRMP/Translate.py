@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QGraphicsLineItem,
     QGraphicsItemGroup,
-    QGraphicsScene
+    QGraphicsScene,
+    QLabel
 )
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QTransform
@@ -22,6 +23,7 @@ class TranslateDialog(QDialog, AdditionalMethods):
         self.initUI(figure)
         self.setWindowTitle("TranslateDialog")
         self.setObjectName("TranslateDialog")
+        self.setMinimumWidth(200)
 
         self.scene = scene
         self.figure = figure
@@ -33,35 +35,95 @@ class TranslateDialog(QDialog, AdditionalMethods):
         
     
     def initUI(self, figure: Figures):
-        mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
         if figure == Figures.POINT or figure == Figures.LINE or figure == Figures.MIXED:
 
             #widgets
-            translator_X = QSpinBox(minimum=-10000, maximum=10000)
-            translator_Y = QSpinBox(minimum=-10000, maximum=10000)
+            translator_X = QSpinBox(minimum=-10000, maximum=10000); translator_X.setMinimumWidth(50); translator_X.setMinimumHeight(35)
+            translator_Y = QSpinBox(minimum=-10000, maximum=10000); translator_Y.setMinimumWidth(50); translator_Y.setMinimumHeight(35)
+            label_tX = QLabel("Translate x")
+            label_tY = QLabel("Translate y")
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.translate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, translator_X.value(), translator_Y.value(), 0))
+            confirm_2D.setFixedHeight(35)
             
             #layout
+            mainLayout.addWidget(label_tX)
             mainLayout.addWidget(translator_X)
+            mainLayout.addWidget(label_tY)
             mainLayout.addWidget(translator_Y)
             
             mainLayout.addWidget(confirm_2D)
         elif figure == Figures.CUBE:
             
             #widgets
-            translator_X = QSpinBox(minimum=-10000, maximum=10000)
-            translator_Y = QSpinBox(minimum=-10000, maximum=10000)
-            translator_Z = QSpinBox(minimum=-10000, maximum=10000)
+            translator_X = QSpinBox(minimum=-10000, maximum=10000); translator_X.setMinimumWidth(50); translator_X.setMinimumHeight(35)
+            translator_Y = QSpinBox(minimum=-10000, maximum=10000); translator_Y.setMinimumWidth(50); translator_Y.setMinimumHeight(35)
+            translator_Z = QSpinBox(minimum=-10000, maximum=10000); translator_Z.setMinimumWidth(50); translator_Z.setMinimumHeight(35)
+            label_tX = QLabel("Translate x")
+            label_tY = QLabel("Translate y")
+            label_tZ = QLabel("Translate z")
             confirm_3D = QPushButton("Confirm"); confirm_3D.clicked.connect(lambda: self.translate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, translator_X.value(), translator_Y.value(), translator_Z.value()))
-            
+            confirm_3D.setFixedHeight(35)
             #layout
+            mainLayout.addWidget(label_tX)
             mainLayout.addWidget(translator_X)
+            mainLayout.addWidget(label_tY)
             mainLayout.addWidget(translator_Y)
+            mainLayout.addWidget(label_tZ)
             mainLayout.addWidget(translator_Z)
             mainLayout.addWidget(confirm_3D)
 
         self.setLayout(mainLayout)
         #StyleSheets
+
+        dialog_stylesheet = (
+            'QDialog {'
+            'background-color: #FFFFFF;'
+            '}'
+        )
+        label_stylesheet = (
+            'QLabel {'
+            'color: #132238;'
+            'font-family: "Work Sans";'
+            'font-size: 18px;' 
+            '}'
+        )
+        button_stylesheet = (
+            'QPushButton {'
+            'background-color: #EEEEEE;'
+            'color: #132238;'
+            'border-radius: 12px;'
+            'font-family: "Work Sans";'
+            'font-size: 12px;' 
+            'font-weight: bold;'
+            '}'
+            
+            'QPushButton:hover {'
+            'background-color: #A53DFF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+            'QPushButton:pressed {'
+            'background-color: #632599;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+
+            'QPushButton:checked {'
+            'background-color: #DBB1FF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+        )
+        spinBox_stylesheet = (
+            'QSpinBox {'
+                'font-size: 16px;'
+                'color: #132238;'
+                'background-color: #DBB1FF;'
+                'border: 0x solid #DBB1FF;'
+                'border-radius: 2px;' \
+                'padding-left: 5px;'
+            '}'
+            )
+        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + spinBox_stylesheet
+        self.setStyleSheet(styleSheet)
         pass
     
     #Slots
@@ -114,7 +176,7 @@ class TranslateDialog(QDialog, AdditionalMethods):
                 
                 if isinstance(gr, QGraphicsCubeGroup):
 
-                    if gr.parentItem != None:
+                    if gr.parentItem() != None:
 
                         parent = gr.parentItem()
 
