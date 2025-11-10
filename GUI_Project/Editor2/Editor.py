@@ -435,8 +435,6 @@ class EditorWidget(QWidget):
             points = new_cube.points
             
             self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)
-
-            pass
     def openScaleDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -453,15 +451,53 @@ class EditorWidget(QWidget):
             #Point can't exist without a parent line
             if parent.parentItem() != None:
                 parent = parent.parentItem() #Got QMixedGroup
-    
+            
+            #If has 3D -> prevent scaling
+
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+            mixedGroups.append(self.currentGroup)
+
+            for gr in mixedGroups:
+
+                for item in gr.childItems():
+
+                    if isinstance(item, QGraphicsCubeGroup):
+
+                        return
+                    
         elif figureType == Figures.LINE:
 
             dialog = ScaleDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
+            #If has 3D -> prevent scaling
+
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+            mixedGroups.append(self.currentGroup)
+
+            for gr in mixedGroups:
+
+                for item in gr.childItems():
+
+                    if isinstance(item, QGraphicsCubeGroup):
+
+                        return
+                    
         elif figureType == Figures.MIXED:
 
             dialog = ScaleDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
-        
+
+            #If has 3D -> prevent scaling
+
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+            mixedGroups.append(self.currentGroup)
+
+            for gr in mixedGroups:
+
+                for item in gr.childItems():
+
+                    if isinstance(item, QGraphicsCubeGroup):
+
+                        return
         elif figureType == Figures.CUBE:
 
             dialog = ScaleDialog(scene, Figures.CUBE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
@@ -578,10 +614,35 @@ class EditorWidget(QWidget):
 
             dialog = RotateDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
+            #If has 3D -> prevent rotation
+
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+            mixedGroups.append(self.currentGroup)
+
+            for gr in mixedGroups:
+
+                for item in gr.childItems():
+
+                    if isinstance(item, QGraphicsCubeGroup):
+
+                        return
+                    
         elif figureType == Figures.MIXED:
 
             dialog = RotateDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
-        
+
+            #If has 3D -> prevent rotation
+
+            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
+            mixedGroups.append(self.currentGroup)
+
+            for gr in mixedGroups:
+
+                for item in gr.childItems():
+
+                    if isinstance(item, QGraphicsCubeGroup):
+
+                        return
         elif figureType == Figures.CUBE:
 
             dialog = RotateDialog(scene, Figures.CUBE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
@@ -785,6 +846,7 @@ class EditorWidget(QWidget):
             points = new_cube.points
 
             self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)
+            
     def openProjectionDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -1120,10 +1182,6 @@ class EditorWidget(QWidget):
         if newItem not in self.groups:
             self.groups.append(newItem)
 
-        if oldItem in self.preparedGroups:
-            self.preparedGroups.remove(oldItem)
-        if newItem not in self.preparedGroups:
-            self.preparedGroups.append(newItem)
         pass
     def replaceItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, oldItem: QGraphicsItemGroup, newItem: QGraphicsItemGroup, points: list[QPointF]):
         #replace in library
@@ -1133,7 +1191,7 @@ class EditorWidget(QWidget):
         pass
     def moveItemsAtScene(self, scene: QGraphicsScene, library: QListWidget, view: QGraphicsView, leftMousePos: QPoint, deltaVal: QPointF):
         delta = QPointF(deltaVal.x(), deltaVal.y()*-1)
-        print("Called moveItemsAtScene")
+        print(f"Called moveItemsAtScene: {delta}")
         if self.currentItem == None:
             return
         
@@ -1150,7 +1208,6 @@ class EditorWidget(QWidget):
                         return
                     
             '''Move items'''
-            print(self.currentGroup.childItems())
             if isinstance(self.currentItem, QGraphicsPointGroup) and self.selectMode == SelectModes.POINT:
                 
                 '''Update points'''
@@ -1237,8 +1294,15 @@ class EditorWidget(QWidget):
                     
                     if isinstance(gr, QGraphicsCubeGroup):
                         
+                        
+
                         if gr.parentItem() == None:
-                            
+
+                            if gr.sX < 0:
+                                delta.setX(delta.x() * -1)
+                            if gr.sY < 0:
+                                delta.setX(delta.y() * -1)
+
                             old_cube = gr
                             tX = old_cube.tX
                             tY = old_cube.tY
@@ -1250,16 +1314,12 @@ class EditorWidget(QWidget):
                             rY = old_cube.rY
                             rZ = old_cube.rZ
                             camZ = old_cube.camZ
-
                             new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
-
                             self.replaceItemEverywhere(scene, library, old_cube, new_cube, new_cube.points)
                             self.currentItem = new_cube
                             self.currentGroup = new_cube
                             continue
-
                         else:
-
                             old_cube = gr
                             tX = old_cube.tX
                             tY = old_cube.tY
@@ -1271,18 +1331,16 @@ class EditorWidget(QWidget):
                             rY = old_cube.rY
                             rZ = old_cube.rZ
                             camZ = old_cube.camZ
-
                             parent: QGraphicsMixedGroup = old_cube.parentItem()
                             new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
-
-                            self.replaceItemInScene(scene, old_cube, new_cube)
                             parent.removeFromGroup(old_cube)
+                            self.replaceItemInScene(scene, old_cube, new_cube)
                             parent.addToGroup(new_cube)
                             continue
-
+                    
                     for chld in gr.childItems():
 
-                        if isinstance(chld, QGraphicsLineGroup):
+                        if isinstance(chld, QGraphicsLineGroup) and not isinstance(chld.parentItem(), QGraphicsCubeGroup):
 
                             oldLine = chld
                             old_points: list[QPointF] = oldLine.points
@@ -1295,12 +1353,10 @@ class EditorWidget(QWidget):
                             gr.removeFromGroup(oldLine)
                             self.replaceItemInScene(scene, oldLine, newLine)
                             gr.addToGroup(newLine)
+                        
 
-                        elif isinstance(chld, QGraphicsCubeGroup):
-                            continue
-                
                 '''Set focus'''
-                self.setCurrentItemByCSM(scene, library, [self.currentItem], QPointF())
+                self.setCurrentItemByCSM(scene, library, [self.currentGroup], QPointF())
     #Deletors: Scene deletion sets the focus!
     def deleteCurrentItemFromScene(self, scene: QGraphicsScene):
         print(f"deleteCurrentItemFromScene: {self.currentGroup}")
@@ -1511,17 +1567,16 @@ class EditorWidget(QWidget):
             #Prevent future deletion
             self.groups.append(mixedGroup)
     def ungroup(self, scene: QGraphicsScene, library: QListWidget, group: QGraphicsItem):
-        if isinstance(group, QGraphicsMixedGroup):
-            # Пропускаем группы, у которых есть родитель (они разгруппируются рекурсивно)
-            if group.parentItem() is not None:
-                return
+        if isinstance(group, QGraphicsMixedGroup) and not isinstance(group, QGraphicsCubeGroup):
             '''Add separated items to library and remove from group'''
             children = group.childItems()
-            print(len(children))
             for chld in children:
+                print(f"Достаем {chld} из {chld.parentItem()}")
                 group.removeFromGroup(chld)
                 self.addItemToLibrary(library, chld, chld.points)
                 self.paintItem(chld, self.defaultPen, self.defaultBrush)
+            if len(group.childItems()) == 0:
+                self.deleteItemFromLibrary(library, group)
             
             self.deleteItemEverywhere(scene, library, group)
             self.groups.remove(group)
@@ -1530,7 +1585,6 @@ class EditorWidget(QWidget):
             '''Set to default'''
             self.currentItem = None
             self.currentGroup = None
-
     #Additional methods
     def getAllBaseChildItems(self, item: QGraphicsItem):
         '''Returns all base items of group'''

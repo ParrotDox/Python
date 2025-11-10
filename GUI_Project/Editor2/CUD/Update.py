@@ -96,7 +96,49 @@ class UpdateDialog(QDialog):
 
         self.setLayout(mainLayout)
         #StyleSheets
-        pass
+        label_stylesheet = (
+            'QLabel {'
+            'color: #132238;'
+            'font-family: "Work Sans";'
+            'font-size: 18px;' 
+            '}'
+        )
+        button_stylesheet = (
+            'QPushButton {'
+            'background-color: #EEEEEE;'
+            'color: #132238;'
+            'border-radius: 12px;'
+            'font-family: "Work Sans";'
+            'font-size: 12px;' 
+            'font-weight: bold;'
+            '}'
+            
+            'QPushButton:hover {'
+            'background-color: #A53DFF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+            'QPushButton:pressed {'
+            'background-color: #632599;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+
+            'QPushButton:checked {'
+            'background-color: #DBB1FF;'
+            'color: #FFFFFF;'
+            'font-size: 16px;}'
+        )
+        spinBox_stylesheet = (
+            'QSpinBox {'
+                'font-size: 16px;'
+                'color: #132238;'
+                'background-color: #DBB1FF;'
+                'border: 0x solid #DBB1FF;'
+                'border-radius: 2px;' \
+                'padding-left: 5px;'
+            '}'
+            )
+        styleSheet =  label_stylesheet + button_stylesheet + spinBox_stylesheet
+        self.setStyleSheet(styleSheet)
 
     #Slots
     def setDimension(self, tab: QTabWidget):
