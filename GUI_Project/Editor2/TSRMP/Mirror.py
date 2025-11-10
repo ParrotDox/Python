@@ -236,15 +236,15 @@ class MirrorDialog(QDialog, AdditionalMethods):
             tX = old_cube.tX
             tY = old_cube.tY
             tZ = old_cube.tZ
+            if mirrorX:
+                tX = tX * -1
+            if mirrorY:
+                tY = tY * -1
+            if mirrorZ:
+                tZ = tZ * -1
             sX = old_cube.sX
             sY = old_cube.sY
             sZ = old_cube.sZ
-            if mirrorX:
-                sX = sX * -1
-            if mirrorY:
-                sY = sY * -1
-            if mirrorZ:
-                sZ = sZ * -1
             rX = old_cube.rX
             rY = old_cube.rY
             rZ = old_cube.rZ

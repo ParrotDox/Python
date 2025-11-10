@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QWidget,
     QSpinBox,
+    QDoubleSpinBox,
     QPushButton,
     QTabWidget,
     QGridLayout,
@@ -32,10 +33,10 @@ class CreateDialog(QDialog):
         tab = QTabWidget(); tab.currentChanged.connect(lambda: self.setDimension(tab))
 
         creator2D = QWidget()
-        x1 = QSpinBox(minimum=-10000, maximum=10000); x1.setMinimumWidth(50); x1.setMinimumHeight(35)
-        x2 = QSpinBox(minimum=-10000, maximum=10000); x2.setMinimumWidth(50); x2.setMinimumHeight(35)
-        y1 = QSpinBox(minimum=-10000, maximum=10000); y1.setMinimumWidth(50); y1.setMinimumHeight(35)
-        y2 = QSpinBox(minimum=-10000, maximum=10000); y2.setMinimumWidth(50); y2.setMinimumHeight(35)
+        x1 = QDoubleSpinBox(minimum=-10000, maximum=10000); x1.setMinimumWidth(50); x1.setMinimumHeight(35)
+        x2 = QDoubleSpinBox(minimum=-10000, maximum=10000); x2.setMinimumWidth(50); x2.setMinimumHeight(35)
+        y1 = QDoubleSpinBox(minimum=-10000, maximum=10000); y1.setMinimumWidth(50); y1.setMinimumHeight(35)
+        y2 = QDoubleSpinBox(minimum=-10000, maximum=10000); y2.setMinimumWidth(50); y2.setMinimumHeight(35)
         label_x1 = QLabel("x1")
         label_x2 = QLabel("x2")
         label_y1 = QLabel("y1")
@@ -44,16 +45,16 @@ class CreateDialog(QDialog):
         confirm_2D.setFixedHeight(35)
 
         creator3D = QWidget()
-        tX = QSpinBox(minimum=-10000, maximum=10000); tX.setMinimumWidth(50); tX.setMinimumHeight(35); 
-        tY = QSpinBox(minimum=-10000, maximum=10000); tY.setMinimumWidth(50); tY.setMinimumHeight(35)
-        tZ = QSpinBox(minimum=-10000, maximum=10000); tZ.setMinimumWidth(50); tZ.setMinimumHeight(35)
-        sX = QSpinBox(minimum=0.1, maximum=10, value=1); sX.setMinimumWidth(50); sX.setMinimumHeight(35)
-        sY = QSpinBox(minimum=0.1, maximum=10, value=1); sY.setMinimumWidth(50); sY.setMinimumHeight(35)
-        sZ = QSpinBox(minimum=0.1, maximum=10, value=1); sZ.setMinimumWidth(50); sZ.setMinimumHeight(35)
-        rX = QSpinBox(minimum=-360, maximum=360); rX.setMinimumWidth(50); rX.setMinimumHeight(35)
-        rY = QSpinBox(minimum=-360, maximum=360); rY.setMinimumWidth(50); rY.setMinimumHeight(35)
-        rZ = QSpinBox(minimum=-360, maximum=360); rZ.setMinimumWidth(50); rZ.setMinimumHeight(35)
-        camZ  = QSpinBox(minimum=1, maximum=10000); camZ.setMinimumWidth(50); camZ.setMinimumHeight(35)
+        tX = QDoubleSpinBox(minimum=-10000, maximum=10000, value=0); tX.setMinimumWidth(50); tX.setMinimumHeight(35); 
+        tY = QDoubleSpinBox(minimum=-10000, maximum=10000, value=0); tY.setMinimumWidth(50); tY.setMinimumHeight(35)
+        tZ = QDoubleSpinBox(minimum=-10000, maximum=10000, value=0); tZ.setMinimumWidth(50); tZ.setMinimumHeight(35)
+        sX = QDoubleSpinBox(minimum=-10000, maximum=10000, value=1); sX.setMinimumWidth(50); sX.setMinimumHeight(35)
+        sY = QDoubleSpinBox(minimum=-10000, maximum=10000, value=1); sY.setMinimumWidth(50); sY.setMinimumHeight(35)
+        sZ = QDoubleSpinBox(minimum=-10000, maximum=10000, value=1); sZ.setMinimumWidth(50); sZ.setMinimumHeight(35)
+        rX = QDoubleSpinBox(minimum=-360, maximum=360, value=0); rX.setMinimumWidth(50); rX.setMinimumHeight(35)
+        rY = QDoubleSpinBox(minimum=-360, maximum=360, value=0); rY.setMinimumWidth(50); rY.setMinimumHeight(35)
+        rZ = QDoubleSpinBox(minimum=-360, maximum=360, value=0); rZ.setMinimumWidth(50); rZ.setMinimumHeight(35)
+        camZ  = QDoubleSpinBox(minimum=0.01, maximum=100, value=1); camZ.setMinimumWidth(50); camZ.setMinimumHeight(35)
         label_tX = QLabel("Translate x")
         label_tY = QLabel("Translate y")
         label_tZ = QLabel("Translate z")
@@ -79,10 +80,10 @@ class CreateDialog(QDialog):
 
         mainLayout.addWidget(tab)
 
-        creator2DLayout.addWidget(label_x1, 0, 0); creator2DLayout.addWidget(label_x2, 0, 1)
-        creator2DLayout.addWidget(x1, 1, 0); creator2DLayout.addWidget(x2, 1, 1)
-        creator2DLayout.addWidget(label_y1, 2, 0); creator2DLayout.addWidget(label_y2, 2, 1)
-        creator2DLayout.addWidget(y1, 3, 0); creator2DLayout.addWidget(y2, 3, 1)
+        creator2DLayout.addWidget(label_x1, 0, 0); creator2DLayout.addWidget(label_y1, 0, 1)
+        creator2DLayout.addWidget(x1, 1, 0); creator2DLayout.addWidget(y1, 1, 1)
+        creator2DLayout.addWidget(label_x2, 2, 0); creator2DLayout.addWidget(label_y2, 2, 1)
+        creator2DLayout.addWidget(x2, 3, 0); creator2DLayout.addWidget(y2, 3, 1)
         creator2DLayout.addWidget(confirm_2D, 4, 0, 1, 2)
 
         creator3DLayout.addWidget(label_tX, 0, 0)
@@ -112,6 +113,11 @@ class CreateDialog(QDialog):
         self.setLayout(mainLayout)
         
         #StyleSheets
+        dialog_stylesheet = (
+            'QDialog {'
+            'background-color: #FFFFFF;'
+            '}'
+        )
         label_stylesheet = (
             'QLabel {'
             'color: #132238;'
@@ -144,16 +150,16 @@ class CreateDialog(QDialog):
             'font-size: 16px;}'
         )
         spinBox_stylesheet = (
-            'QSpinBox {'
+            'QDoubleSpinBox {'
                 'font-size: 16px;'
-                'color: #132238;'
+                'color: #632599;'
                 'background-color: #DBB1FF;'
                 'border: 0x solid #DBB1FF;'
                 'border-radius: 2px;' \
                 'padding-left: 5px;'
             '}'
             )
-        styleSheet =  label_stylesheet + button_stylesheet + spinBox_stylesheet
+        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + spinBox_stylesheet
         self.setStyleSheet(styleSheet)
         pass
     

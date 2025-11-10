@@ -38,8 +38,8 @@ class ScaleDialog(QDialog, AdditionalMethods):
         mainLayout = QVBoxLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
         if figure == Figures.POINT or figure == Figures.LINE or figure == Figures.MIXED:
             #widgets
-            scaler_X = QDoubleSpinBox(minimum=0.1, maximum=10.0); scaler_X.setMinimumWidth(50); scaler_X.setMinimumHeight(35)
-            scaler_Y = QDoubleSpinBox(minimum=0.1, maximum=10.0); scaler_Y.setMinimumWidth(50); scaler_Y.setMinimumHeight(35)
+            scaler_X = QDoubleSpinBox(minimum=-10000, maximum=10000); scaler_X.setMinimumWidth(50); scaler_X.setMinimumHeight(35)
+            scaler_Y = QDoubleSpinBox(minimum=-10000, maximum=10000); scaler_Y.setMinimumWidth(50); scaler_Y.setMinimumHeight(35)
             label_sX = QLabel("Scale x")
             label_sY = QLabel("Scale y")
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.scale(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, scaler_X.value(), scaler_Y.value(), 0))
@@ -52,9 +52,9 @@ class ScaleDialog(QDialog, AdditionalMethods):
             mainLayout.addWidget(confirm_2D)
         elif figure == Figures.CUBE:
             #widgets
-            scaler_X = QDoubleSpinBox(minimum=0.1, maximum=10.0); scaler_X.setMinimumWidth(50); scaler_X.setMinimumHeight(35)
-            scaler_Y = QDoubleSpinBox(minimum=0.1, maximum=10.0); scaler_Y.setMinimumWidth(50); scaler_Y.setMinimumHeight(35)
-            scaler_Z = QDoubleSpinBox(minimum=0.1, maximum=10.0); scaler_Z.setMinimumWidth(50); scaler_Z.setMinimumHeight(35)
+            scaler_X = QDoubleSpinBox(minimum=-10000, maximum=10000); scaler_X.setMinimumWidth(50); scaler_X.setMinimumHeight(35)
+            scaler_Y = QDoubleSpinBox(minimum=-10000, maximum=10000); scaler_Y.setMinimumWidth(50); scaler_Y.setMinimumHeight(35)
+            scaler_Z = QDoubleSpinBox(minimum=-10000, maximum=10000); scaler_Z.setMinimumWidth(50); scaler_Z.setMinimumHeight(35)
             label_sX = QLabel("Scale x")
             label_sY = QLabel("Scale y")
             label_sZ = QLabel("Scale z")
@@ -110,7 +110,7 @@ class ScaleDialog(QDialog, AdditionalMethods):
         spinBox_stylesheet = (
             'QDoubleSpinBox {'
                 'font-size: 16px;'
-                'color: #132238;'
+                'color: #632599;'
                 'background-color: #DBB1FF;'
                 'border: 0x solid #DBB1FF;'
                 'border-radius: 2px;' \

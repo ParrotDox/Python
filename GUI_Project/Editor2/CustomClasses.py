@@ -8,19 +8,38 @@ from PySide6.QtGui import QMouseEvent, QWheelEvent
 from PySide6.QtGui import QIcon, QPen, QPainter
 import math
 
+import time
+
+class Throttle:
+    def __init__(self, limit_ms):
+        self.limit_ms = limit_ms / 1000.0
+        self.last_call = 0
+    
+    def __call__(self, func):
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            if now - self.last_call >= self.limit_ms:
+                self.last_call = now
+                return func(*args, **kwargs)
+        return wrapper
+
+
+
 class QGraphicsCustomView(QGraphicsView):
     
     itemFocused: Signal = Signal(QGraphicsScene, list, QPointF)
     itemFocusedToGroup: Signal = Signal(QGraphicsScene, list, QPointF)
     itemMoved: Signal = Signal(QPointF, QPointF)
     scaleFactorChanged: Signal = Signal(float)
+    throttler = Throttle(20)
 
     def __init__(self, scene: QGraphicsScene):
         super().__init__(scene)
         #for dragging viewport
         self.lastLeftMousePos: QPointF = None
         self.lastMiddleMousePos: QPointF = None
-        
+
+  
     def mousePressEvent(self, event: QMouseEvent):
         pressPointF = event.position()
         pressPointInt = QPoint(int(pressPointF.x()), int(pressPointF.y()))
@@ -55,6 +74,7 @@ class QGraphicsCustomView(QGraphicsView):
             self.lastLeftMousePos = pressPointF
 
         return super().mousePressEvent(event)
+    @throttler
     def mouseMoveEvent(self, event: QMouseEvent):
         pressPointF = event.position()
         #Move view
@@ -83,10 +103,10 @@ class QGraphicsCustomView(QGraphicsView):
         else:
             return super().wheelEvent(event)
 class QGraphicsCustomScene(QGraphicsScene):
-    def __init__(self, boundingRect: QRect, scaleFactor: float, defaultPen: QPen, crossPen: QPen):
+    def __init__(self, boundingRect: QRect, scaleFactor: float, gridPen: QPen, crossPen: QPen):
         super().__init__(boundingRect)
 
-        self.defaultPen = defaultPen
+        self.gridPen = gridPen
         self.crossPen = crossPen
 
         self.scaleFactor = scaleFactor
@@ -95,7 +115,7 @@ class QGraphicsCustomScene(QGraphicsScene):
         super().drawBackground(painter, rect)
 
         '''Draw grid'''
-        painter.setPen(self.defaultPen)
+        painter.setPen(self.gridPen)
 
         #from 0 to left
         x = 0

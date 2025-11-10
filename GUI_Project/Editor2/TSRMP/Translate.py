@@ -3,7 +3,7 @@ from CustomClasses import QGraphicsCustomItemGroup, QGraphicsMixedGroup, QGraphi
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
-    QSpinBox,
+    QDoubleSpinBox,
     QPushButton,
     QTabWidget,
     QGridLayout,
@@ -39,8 +39,8 @@ class TranslateDialog(QDialog, AdditionalMethods):
         if figure == Figures.POINT or figure == Figures.LINE or figure == Figures.MIXED:
 
             #widgets
-            translator_X = QSpinBox(minimum=-10000, maximum=10000); translator_X.setMinimumWidth(50); translator_X.setMinimumHeight(35)
-            translator_Y = QSpinBox(minimum=-10000, maximum=10000); translator_Y.setMinimumWidth(50); translator_Y.setMinimumHeight(35)
+            translator_X = QDoubleSpinBox(minimum=-10000, maximum=10000); translator_X.setMinimumWidth(50); translator_X.setMinimumHeight(35)
+            translator_Y = QDoubleSpinBox(minimum=-10000, maximum=10000); translator_Y.setMinimumWidth(50); translator_Y.setMinimumHeight(35)
             label_tX = QLabel("Translate x")
             label_tY = QLabel("Translate y")
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.translate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, translator_X.value(), translator_Y.value(), 0))
@@ -56,9 +56,9 @@ class TranslateDialog(QDialog, AdditionalMethods):
         elif figure == Figures.CUBE:
             
             #widgets
-            translator_X = QSpinBox(minimum=-10000, maximum=10000); translator_X.setMinimumWidth(50); translator_X.setMinimumHeight(35)
-            translator_Y = QSpinBox(minimum=-10000, maximum=10000); translator_Y.setMinimumWidth(50); translator_Y.setMinimumHeight(35)
-            translator_Z = QSpinBox(minimum=-10000, maximum=10000); translator_Z.setMinimumWidth(50); translator_Z.setMinimumHeight(35)
+            translator_X = QDoubleSpinBox(minimum=-10000, maximum=10000); translator_X.setMinimumWidth(50); translator_X.setMinimumHeight(35)
+            translator_Y = QDoubleSpinBox(minimum=-10000, maximum=10000); translator_Y.setMinimumWidth(50); translator_Y.setMinimumHeight(35)
+            translator_Z = QDoubleSpinBox(minimum=-10000, maximum=10000); translator_Z.setMinimumWidth(50); translator_Z.setMinimumHeight(35)
             label_tX = QLabel("Translate x")
             label_tY = QLabel("Translate y")
             label_tZ = QLabel("Translate z")
@@ -113,9 +113,9 @@ class TranslateDialog(QDialog, AdditionalMethods):
             'font-size: 16px;}'
         )
         spinBox_stylesheet = (
-            'QSpinBox {'
+            'QDoubleSpinBox {'
                 'font-size: 16px;'
-                'color: #132238;'
+                'color: #632599;'
                 'background-color: #DBB1FF;'
                 'border: 0x solid #DBB1FF;'
                 'border-radius: 2px;' \

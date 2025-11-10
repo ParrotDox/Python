@@ -3,7 +3,7 @@ from CustomClasses import QGraphicsCustomItemGroup, QGraphicsMixedGroup, QGraphi
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
-    QSpinBox,
+    QDoubleSpinBox,
     QPushButton,
     QTabWidget,
     QGridLayout,
@@ -38,7 +38,7 @@ class RotateDialog(QDialog, AdditionalMethods):
         if figure == Figures.POINT or figure == Figures.LINE or figure == Figures.MIXED:
             
             #widgets
-            rotator = QSpinBox(minimum=-360, maximum=360); rotator.setMinimumWidth(50); rotator.setMinimumHeight(35)
+            rotator = QDoubleSpinBox(minimum=-360, maximum=360); rotator.setMinimumWidth(50); rotator.setMinimumHeight(35)
             label_r = QLabel("Rotate by")
             confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.rotate(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, rotator.value(), 0, 0))
             confirm_2D.setFixedHeight(35)
@@ -50,9 +50,9 @@ class RotateDialog(QDialog, AdditionalMethods):
         elif figure == Figures.CUBE:
             
             #widgets
-            rotatorX = QSpinBox(minimum=-360, maximum=360); rotatorX.setMinimumWidth(50); rotatorX.setMinimumHeight(35)
-            rotatorY = QSpinBox(minimum=-360, maximum=360); rotatorY.setMinimumWidth(50); rotatorY.setMinimumHeight(35)
-            rotatorZ = QSpinBox(minimum=-360, maximum=360); rotatorZ.setMinimumWidth(50); rotatorZ.setMinimumHeight(35)
+            rotatorX = QDoubleSpinBox(minimum=-360, maximum=360); rotatorX.setMinimumWidth(50); rotatorX.setMinimumHeight(35)
+            rotatorY = QDoubleSpinBox(minimum=-360, maximum=360); rotatorY.setMinimumWidth(50); rotatorY.setMinimumHeight(35)
+            rotatorZ = QDoubleSpinBox(minimum=-360, maximum=360); rotatorZ.setMinimumWidth(50); rotatorZ.setMinimumHeight(35)
             label_rX = QLabel("Rotate x")
             label_rY = QLabel("Rotate y")
             label_rZ = QLabel("Rotate z")
@@ -106,9 +106,9 @@ class RotateDialog(QDialog, AdditionalMethods):
             'font-size: 16px;}'
         )
         spinBox_stylesheet = (
-            'QSpinBox {'
+            'QDoubleSpinBox {'
                 'font-size: 16px;'
-                'color: #132238;'
+                'color: #632599;'
                 'background-color: #DBB1FF;'
                 'border: 0x solid #DBB1FF;'
                 'border-radius: 2px;' \

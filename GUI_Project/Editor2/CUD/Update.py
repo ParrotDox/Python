@@ -1,9 +1,9 @@
-from CustomClasses import QGraphicsLineGroup, QGraphicsCubeGroup, QGraphicsMixedGroup, AdditionalMethods
+from CustomClasses import QGraphicsLineGroup, QGraphicsCubeGroup, QGraphicsMixedGroup, AdditionalMethods, QGraphicsCustomItemGroup
 from EditorEnum import Figures
 from PySide6.QtWidgets import (
     QDialog,
     QWidget,
-    QSpinBox,
+    QDoubleSpinBox,
     QPushButton,
     QTabWidget,
     QGridLayout,
@@ -13,26 +13,27 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QPointF
 class UpdateDialog(QDialog):
     
-    def __init__(self, figure, scaleFactor):
+    def __init__(self, figure, itemSample, scaleFactor):
         super().__init__()
-        self.initUI(figure)
+        self.initUI(figure, itemSample)
         self.setWindowTitle("UpdateDialog")
         self.setObjectName("UpdateDialog")
         self.setMinimumWidth(200)
 
-        self.scaleFactor = scaleFactor
         self.figure: int = Figures.LINE
+        self.itemSample: QGraphicsCustomItemGroup = itemSample
+        self.scaleFactor = scaleFactor
         self.points: list[QPointF] = []
         self.cube: QGraphicsCubeGroup = None
     
-    def initUI(self, figure): #figure 1 - line, 2 - cube
+    def initUI(self, figure, itemSample): #figure 1 - line, 2 - cube
         mainLayout = None
         if figure == Figures.LINE:
             #widgets
-            x1 = QSpinBox(minimum=-10000, maximum=10000); x1.setMinimumWidth(50); x1.setMinimumHeight(35)
-            x2 = QSpinBox(minimum=-10000, maximum=10000); x2.setMinimumWidth(50); x2.setMinimumHeight(35)
-            y1 = QSpinBox(minimum=-10000, maximum=10000); y1.setMinimumWidth(50); y1.setMinimumHeight(35)
-            y2 = QSpinBox(minimum=-10000, maximum=10000); y2.setMinimumWidth(50); y2.setMinimumHeight(35)
+            x1 = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.points[0].x()); x1.setMinimumWidth(50); x1.setMinimumHeight(35)
+            x2 = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.points[1].x()); x2.setMinimumWidth(50); x2.setMinimumHeight(35)
+            y1 = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.points[0].y()); y1.setMinimumWidth(50); y1.setMinimumHeight(35)
+            y2 = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.points[1].y()); y2.setMinimumWidth(50); y2.setMinimumHeight(35)
             label_x1 = QLabel("x1")
             label_x2 = QLabel("x2")
             label_y1 = QLabel("y1")
@@ -48,16 +49,16 @@ class UpdateDialog(QDialog):
             mainLayout.addWidget(confirm_2D, 4, 0, 1, 2)
         elif figure == Figures.CUBE:
             #widgets
-            tX = QSpinBox(minimum=-10000, maximum=10000); tX.setMinimumWidth(50); tX.setMinimumHeight(35); 
-            tY = QSpinBox(minimum=-10000, maximum=10000); tY.setMinimumWidth(50); tY.setMinimumHeight(35)
-            tZ = QSpinBox(minimum=-10000, maximum=10000); tZ.setMinimumWidth(50); tZ.setMinimumHeight(35)
-            sX = QSpinBox(minimum=0.1, maximum=10, value=1); sX.setMinimumWidth(50); sX.setMinimumHeight(35)
-            sY = QSpinBox(minimum=0.1, maximum=10, value=1); sY.setMinimumWidth(50); sY.setMinimumHeight(35)
-            sZ = QSpinBox(minimum=0.1, maximum=10, value=1); sZ.setMinimumWidth(50); sZ.setMinimumHeight(35)
-            rX = QSpinBox(minimum=-360, maximum=360); rX.setMinimumWidth(50); rX.setMinimumHeight(35)
-            rY = QSpinBox(minimum=-360, maximum=360); rY.setMinimumWidth(50); rY.setMinimumHeight(35)
-            rZ = QSpinBox(minimum=-360, maximum=360); rZ.setMinimumWidth(50); rZ.setMinimumHeight(35)
-            camZ  = QSpinBox(minimum=1, maximum=10000); camZ.setMinimumWidth(50); camZ.setMinimumHeight(35)
+            tX = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.tX); tX.setMinimumWidth(50); tX.setMinimumHeight(35); 
+            tY = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.tY); tY.setMinimumWidth(50); tY.setMinimumHeight(35)
+            tZ = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.tZ); tZ.setMinimumWidth(50); tZ.setMinimumHeight(35)
+            sX = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.sX); sX.setMinimumWidth(50); sX.setMinimumHeight(35)
+            sY = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.sY); sY.setMinimumWidth(50); sY.setMinimumHeight(35)
+            sZ = QDoubleSpinBox(minimum=-10000, maximum=10000, value=itemSample.sY); sZ.setMinimumWidth(50); sZ.setMinimumHeight(35)
+            rX = QDoubleSpinBox(minimum=-360, maximum=360, value=itemSample.rX); rX.setMinimumWidth(50); rX.setMinimumHeight(35)
+            rY = QDoubleSpinBox(minimum=-360, maximum=360, value=itemSample.rY); rY.setMinimumWidth(50); rY.setMinimumHeight(35)
+            rZ = QDoubleSpinBox(minimum=-360, maximum=360, value=itemSample.rZ); rZ.setMinimumWidth(50); rZ.setMinimumHeight(35)
+            camZ  = QDoubleSpinBox(minimum=0.01, maximum=100, value=itemSample.camZ); camZ.setMinimumWidth(50); camZ.setMinimumHeight(35)
             label_tX = QLabel("Translate x")
             label_tY = QLabel("Translate y")
             label_tZ = QLabel("Translate z")
@@ -96,6 +97,11 @@ class UpdateDialog(QDialog):
 
         self.setLayout(mainLayout)
         #StyleSheets
+        dialog_stylesheet = (
+            'QDialog {'
+            'background-color: #FFFFFF;'
+            '}'
+        )
         label_stylesheet = (
             'QLabel {'
             'color: #132238;'
@@ -128,16 +134,16 @@ class UpdateDialog(QDialog):
             'font-size: 16px;}'
         )
         spinBox_stylesheet = (
-            'QSpinBox {'
+            'QDoubleSpinBox {'
                 'font-size: 16px;'
-                'color: #132238;'
+                'color: #632599;'
                 'background-color: #DBB1FF;'
                 'border: 0x solid #DBB1FF;'
                 'border-radius: 2px;' \
                 'padding-left: 5px;'
             '}'
             )
-        styleSheet =  label_stylesheet + button_stylesheet + spinBox_stylesheet
+        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + spinBox_stylesheet
         self.setStyleSheet(styleSheet)
 
     #Slots

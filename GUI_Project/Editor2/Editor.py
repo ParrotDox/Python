@@ -51,8 +51,10 @@ class EditorWidget(QWidget):
         self.focusedBrush: QBrush   = None
         self.preparedPen:QPen       = None
         self.preparedBrush: QBrush  = None
-        self.crossPen: QPen       = None
-        self.crossBrush: QBrush   = None
+        self.crossPen: QPen         = None
+        self.crossBrush: QBrush     = None
+        self.gridPen: QPen          = None
+        self.gridBrush: QBrush      = None
         self.initColors()
 
         #Current selection
@@ -94,14 +96,14 @@ class EditorWidget(QWidget):
         buttonGroup = QPushButton(self.createIcon("Icons/pack.png", 45, 45), ""); buttonGroup.setFixedSize(45,45); buttonGroup.clicked.connect(lambda: self.groupPreparedItems(scene, library))
         buttonUngroup = QPushButton(self.createIcon("Icons/unpack.png", 45, 45), ""); buttonUngroup.setFixedSize(45,45); buttonUngroup.clicked.connect(lambda: self.ungroup(scene, library, self.currentGroup))
 
-        scene = QGraphicsCustomScene(QRect(-1000*self.scaleFactor,-1000*self.scaleFactor,2000*self.scaleFactor,2000*self.scaleFactor), self.scaleFactor, self.defaultPen, self.crossPen)
+        scene = QGraphicsCustomScene(QRect(-1000*self.scaleFactor,-1000*self.scaleFactor,2000*self.scaleFactor,2000*self.scaleFactor), self.scaleFactor, self.gridPen, self.crossPen)
         view = QGraphicsCustomView(scene); view.scale(1, -1)
         view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         view.itemFocused.connect(lambda scene, filteredGroups, point: self.setCurrentItemByCSM(scene, library, filteredGroups, point))
         view.itemFocusedToGroup.connect(lambda scene, filteredGroups, point: self.prepareToGroup(scene, library, filteredGroups, point))
         view.itemMoved.connect(lambda leftMousePos, delta: self.moveItemsAtScene(scene, library, view, leftMousePos, delta))
-        view.scaleFactorChanged.connect(lambda deltaY: self.redrawEverything(scene, library, self.scaleFactor, deltaY, self.defaultPen, self.crossPen))
+        view.scaleFactorChanged.connect(lambda deltaY: self.redrawEverything(scene, library, self.scaleFactor, deltaY, self.gridPen, self.crossPen))
         
         objectsLabel = QLabel("Objects")
         library = QListWidget(); library.itemClicked.connect(lambda item: self.setCurrentItemByLibrary(scene, library, item))
@@ -191,6 +193,7 @@ class EditorWidget(QWidget):
             'QListWidget {'
             'background-color: #EEEEEE;'
             'border: 5px solid #EEEEEE;'
+            'font-family: "Work Sans";'
             'border-radius: 8px'
             '}'
             'QListWidget::item {'
@@ -221,10 +224,11 @@ class EditorWidget(QWidget):
         self.defaultPen = QPen(); self.defaultBrush = QBrush()
         self.focusedPen = QPen(); self.focusedBrush = QBrush()
         self.preparedPen = QPen(); self.preparedBrush = QBrush()
+        self.gridPen = QPen(); self.gridBrush = QBrush()
         self.crossPen = QPen(); self.crossBrush = QBrush()
 
         self.defaultPen.setColor(QColor(19, 34, 56))
-        self.defaultPen.setWidth(1)
+        self.defaultPen.setWidth(2)
         self.defaultPen.setCapStyle(Qt.PenCapStyle.RoundCap)
         self.defaultBrush.setColor(QColor(19, 34, 56))
 
@@ -237,6 +241,11 @@ class EditorWidget(QWidget):
         self.preparedPen.setWidth(3)
         self.preparedPen.setCapStyle(Qt.PenCapStyle.RoundCap)
         self.preparedBrush.setColor(QColor(0, 195, 208))
+
+        self.gridPen.setColor(QColor(19, 34, 56))
+        self.gridPen.setWidth(1)
+        self.gridPen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        self.gridBrush.setColor(QColor(19, 34, 56))
 
         self.crossPen.setColor(QColor(19, 34, 56))
         self.crossPen.setWidth(4)
@@ -290,16 +299,16 @@ class EditorWidget(QWidget):
         '''Seek Mixed group'''
         if figureType == Figures.POINT:
 
-            dialog = UpdateDialog(Figures.LINE, self.scaleFactor)
-
             #Point can't exist without a parent line
             if parent != None:
                 
                 parent = parent.parentItem() #Got QMixedGroup
+            
+            dialog = UpdateDialog(Figures.LINE, parent, self.scaleFactor)
 
         elif figureType == Figures.LINE:
 
-            dialog = UpdateDialog(Figures.LINE, self.scaleFactor)
+            dialog = UpdateDialog(Figures.LINE, self.currentItem, self.scaleFactor)
 
         elif figureType == Figures.MIXED:
 
@@ -307,7 +316,7 @@ class EditorWidget(QWidget):
         
         elif figureType == Figures.CUBE:
 
-            dialog = UpdateDialog(Figures.CUBE, self.scaleFactor)
+            dialog = UpdateDialog(Figures.CUBE, self.currentItem, self.scaleFactor)
         
         result = dialog.exec()
         
@@ -845,8 +854,7 @@ class EditorWidget(QWidget):
             new_cube = dialog.cube
             points = new_cube.points
 
-            self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)
-            
+            self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)      
     def openProjectionDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -1199,9 +1207,10 @@ class EditorWidget(QWidget):
             
             '''If user try to move point or line of a cube return none'''
             if self.selectMode == SelectModes.POINT:
-                if self.currentItem.parentItem().parentItem() != None:
-                    if isinstance(self.currentItem.parentItem().parentItem(), QGraphicsCubeGroup):
-                        return
+                if self.currentItem.parentItem() != None:
+                    if self.currentItem.parentItem().parentItem() != None:
+                        if isinstance(self.currentItem.parentItem().parentItem(), QGraphicsCubeGroup):
+                            return
             if self.selectMode == SelectModes.LINE:
                 if self.currentItem.parentItem() != None:
                     if isinstance(self.currentItem.parentItem(), QGraphicsCubeGroup):
@@ -1288,20 +1297,13 @@ class EditorWidget(QWidget):
 
                 groups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsCubeGroup, QGraphicsMixedGroup))
                 groups.append(self.currentGroup)
-
+                
                 '''Create and replace old items in mixed groups'''
                 for gr in groups:
                     
                     if isinstance(gr, QGraphicsCubeGroup):
-                        
-                        
 
                         if gr.parentItem() == None:
-
-                            if gr.sX < 0:
-                                delta.setX(delta.x() * -1)
-                            if gr.sY < 0:
-                                delta.setX(delta.y() * -1)
 
                             old_cube = gr
                             tX = old_cube.tX
@@ -1314,12 +1316,23 @@ class EditorWidget(QWidget):
                             rY = old_cube.rY
                             rZ = old_cube.rZ
                             camZ = old_cube.camZ
+
+                            if gr.sX < 0:
+                                delta.setX(delta.x() * -1)
+                                tX = tX * -1
+                            if gr.sY < 0:
+                                delta.setX(delta.y() * -1)
+                                tY = tY * -1
+                            if gr.sZ < 0:
+                                tZ = tZ * -1
+
                             new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
                             self.replaceItemEverywhere(scene, library, old_cube, new_cube, new_cube.points)
                             self.currentItem = new_cube
                             self.currentGroup = new_cube
                             continue
                         else:
+                            
                             old_cube = gr
                             tX = old_cube.tX
                             tY = old_cube.tY
@@ -1331,6 +1344,17 @@ class EditorWidget(QWidget):
                             rY = old_cube.rY
                             rZ = old_cube.rZ
                             camZ = old_cube.camZ
+
+                            if gr.sX < 0:
+                                delta.setX(delta.x() * -1)
+                                tX = tX * -1
+                            if gr.sY < 0:
+                                delta.setX(delta.y() * -1)
+                                tY = tY * -1
+                            if gr.sZ < 0:
+                                tZ = tZ * -1
+
+                            
                             parent: QGraphicsMixedGroup = old_cube.parentItem()
                             new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
                             parent.removeFromGroup(old_cube)
@@ -1399,10 +1423,10 @@ class EditorWidget(QWidget):
         #delete from scene
         self.deleteItemFromScene(scene, item)
     #Redraw methods for scaling
-    def redrawGrid(self, scene: QGraphicsCustomScene, scaleFactor: float, defaultPen: QPen, crossPen: QPen):
+    def redrawGrid(self, scene: QGraphicsCustomScene, scaleFactor: float, gridPen: QPen, crossPen: QPen):
         print(f"redrawGrid: {scaleFactor}")
         scene.scaleFactor = scaleFactor
-        scene.defaultPen = defaultPen
+        scene.gridPen = gridPen
         scene.crossPen = crossPen
         scene.update()
     def redrawItems(self, scene: QGraphicsCustomScene, library: QListWidget):
