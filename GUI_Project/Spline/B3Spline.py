@@ -103,5 +103,11 @@ def drawGrid(scene: QGraphicsScene, scale):
 #Show/run app
 setSpline(scene, rawPoints, bakedPoints)
 drawGrid(scene, scale)
+print(f"RAW ({len(rawPoints)}):")
+for pt in rawPoints:
+    print(f"x = {round(pt.x,2)} || y = {round(pt.y, 2)}")
+print(f"BAKED ({len(bakedPoints)}):")
+for pt in bakedPoints:
+    print(f"x = {round(pt.x/scale,2)} || y = {round(pt.y/scale, 2)}")
 mainWindow.show()
 app.exec()

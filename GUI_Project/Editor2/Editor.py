@@ -347,6 +347,8 @@ class EditorWidget(QWidget):
                     parent.removeFromGroup(self.currentItem)
                 
                 parent.addToGroup(newItem)
+                self.currentItem = None
+                self.currentGroup = None
 
             else:
                 #replace item everywhere
@@ -367,6 +369,8 @@ class EditorWidget(QWidget):
 
                 self.replaceItemEverywhere(scene, library, self.currentItem, cube, new_points)
 
+            self.currentItem = None
+            self.currentGroup = None
             pass       
     def openTranslateDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
@@ -421,6 +425,8 @@ class EditorWidget(QWidget):
                     parent.removeFromGroup(self.currentItem)
                 
                 parent.addToGroup(newItem)
+                self.currentItem = None
+                self.currentGroup = None
 
             else:
                 '''Replace old line by new at scene'''
@@ -428,6 +434,8 @@ class EditorWidget(QWidget):
                     self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
                 elif figureType == Figures.LINE:
                     self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
             
@@ -436,6 +444,8 @@ class EditorWidget(QWidget):
             newGroup = dialog.item
             #Update group in library
             self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
+            self.currentItem = None
+            self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             
@@ -444,6 +454,8 @@ class EditorWidget(QWidget):
             points = new_cube.points
             
             self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)
+            self.currentItem = None
+            self.currentGroup = None
     def openScaleDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -503,6 +515,8 @@ class EditorWidget(QWidget):
                 newGroup = dialog.item
                 #Update group everywhere
                 self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
+                self.currentItem = None
+                self.currentGroup = None
 
             elif isinstance(self.currentGroup, QGraphicsLineGroup):
                 
@@ -518,6 +532,9 @@ class EditorWidget(QWidget):
                 elif figureType == Figures.LINE:
 
                     self.replaceItemInLibrary(scene, library, self.currentItem, newItem, newItem.points)
+                
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
             
@@ -544,6 +561,8 @@ class EditorWidget(QWidget):
                     parent.removeFromGroup(self.currentItem)
                 
                 parent.addToGroup(newItem)
+                self.currentItem = None
+                self.currentGroup = None
 
             else:
                 '''Replace old line by new at scene'''
@@ -551,6 +570,9 @@ class EditorWidget(QWidget):
                     self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
                 elif figureType == Figures.LINE:
                     self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+                
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
             
@@ -559,6 +581,9 @@ class EditorWidget(QWidget):
             newGroup = dialog.item
             #Update group in library
             self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
+            
+            self.currentItem = None
+            self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             
@@ -567,6 +592,9 @@ class EditorWidget(QWidget):
             points = new_cube.points
 
             self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)
+
+            self.currentItem = None
+            self.currentGroup = None
     def openRotateDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -625,6 +653,9 @@ class EditorWidget(QWidget):
                 #Update group everywhere
                 self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
 
+                self.currentItem = None
+                self.currentGroup = None
+
             elif isinstance(self.currentGroup, QGraphicsLineGroup):
                 
                 oldLine = self.currentItem.parentItem()
@@ -639,6 +670,9 @@ class EditorWidget(QWidget):
                 elif figureType == Figures.LINE:
 
                     self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
             
@@ -665,6 +699,8 @@ class EditorWidget(QWidget):
                     parent.removeFromGroup(self.currentItem)
                 
                 parent.addToGroup(newItem)
+                self.currentItem = None
+                self.currentGroup = None
 
             else:
                 '''Replace old line by new at scene'''
@@ -672,6 +708,9 @@ class EditorWidget(QWidget):
                     self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
                 elif figureType == Figures.LINE:
                     self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
             
@@ -681,12 +720,18 @@ class EditorWidget(QWidget):
             #Update group everywhere
             self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
 
+            self.currentItem = None
+            self.currentGroup = None
+
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             old_cube = self.currentItem
             new_cube = dialog.cube
             points = new_cube.points
 
             self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)
+
+            self.currentItem = None
+            self.currentGroup = None
     def openMirrorDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -746,6 +791,9 @@ class EditorWidget(QWidget):
                 mixedGroup.removeFromGroup(parent)
                 mixedGroup.addToGroup(newItem)
 
+                self.currentItem = None
+                self.currentGroup = None
+
 
             elif isinstance(self.currentGroup, QGraphicsLineGroup):
                 
@@ -761,6 +809,9 @@ class EditorWidget(QWidget):
                 elif figureType == Figures.LINE:
 
                     self.replaceItemInLibrary(scene, library, self.currentItem, newItem, newItem.points)
+                
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
             
@@ -788,12 +839,18 @@ class EditorWidget(QWidget):
                 
                 parent.addToGroup(newItem)
 
+                self.currentItem = None
+                self.currentGroup = None
+
             else:
                 '''Replace old line by new at scene'''
                 if figureType == Figures.POINT:
                     self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
                 elif figureType == Figures.LINE:
                     self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+                
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
             
@@ -803,12 +860,19 @@ class EditorWidget(QWidget):
             #Update group everywhere
             self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
 
+            self.currentItem = None
+            self.currentGroup = None
+
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             old_cube = self.currentItem
             new_cube = dialog.cube
             points = new_cube.points
 
-            self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)      
+            self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)    
+
+            self.currentItem = None
+            self.currentGroup = None  
+
     def openProjectionDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -855,6 +919,9 @@ class EditorWidget(QWidget):
                 mixedGroup.removeFromGroup(parent)
                 mixedGroup.addToGroup(newItem)
 
+                self.currentItem = None
+                self.currentGroup = None
+
 
             elif isinstance(self.currentGroup, QGraphicsLineGroup):
                 
@@ -870,6 +937,9 @@ class EditorWidget(QWidget):
                 elif figureType == Figures.LINE:
 
                     self.replaceItemInLibrary(scene, library, self.currentItem, newItem, newItem.points)
+
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.LINE:
             
@@ -897,12 +967,18 @@ class EditorWidget(QWidget):
                 
                 parent.addToGroup(newItem)
 
+                self.currentItem = None
+                self.currentGroup = None
+
             else:
                 '''Replace old line by new at scene'''
                 if figureType == Figures.POINT:
                     self.replaceItemEverywhere(scene, library, self.currentItem.parentItem(), newItem, newItem.points)
                 elif figureType == Figures.LINE:
                     self.replaceItemEverywhere(scene, library, self.currentItem, newItem, newItem.points)
+                
+                self.currentItem = None
+                self.currentGroup = None
 
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.MIXED:
             
@@ -912,12 +988,18 @@ class EditorWidget(QWidget):
             #Update group everywhere
             self.replaceItemInLibrary(library, self.currentGroup, newGroup, newGroup.points)
 
+            self.currentItem = None
+            self.currentGroup = None
+
         elif result == QDialog.DialogCode.Accepted and figureType == Figures.CUBE:
             old_cube = self.currentItem
             new_cube = dialog.cube
             points = new_cube.points
 
             self.replaceItemEverywhere(scene, library, old_cube, new_cube, points)
+
+            self.currentItem = None
+            self.currentGroup = None
     #Setters
     def setSelectMode(self, buttons: list[QPushButton], mode: SelectModes): #buttons index: [0] - point [1] - line [2] - mixed
         print(f"SetSelectMode: {mode}")

@@ -22,8 +22,8 @@ class ScaleDialog(QDialog, AdditionalMethods):
     def __init__(self, scene: QGraphicsCustomScene, figure: Figures, item: QGraphicsCustomItemGroup, groupItem: QGraphicsCustomItemGroup, points: list[QPointF], scaleFactor):
         super().__init__()
         self.initUI(figure)
-        self.setWindowTitle("RotateDialog")
-        self.setObjectName("RotateDialog")
+        self.setWindowTitle("ScaleDialog")
+        self.setObjectName("ScaleDialog")
         self.setMinimumWidth(200)
 
         self.scene = scene

@@ -466,9 +466,9 @@ class AdditionalMethods():
         rX_points = QGraphicsCubeGroup.useMatrix(cube.cubePoints, QGraphicsCubeGroup.rotationX(rX))
         rY_points = QGraphicsCubeGroup.useMatrix(rX_points, QGraphicsCubeGroup.rotationY(rY))
         rZ_points = QGraphicsCubeGroup.useMatrix(rY_points, QGraphicsCubeGroup.rotationZ(rZ))
-        translatedPoints = QGraphicsCubeGroup.useMatrix(rZ_points, QGraphicsCubeGroup.translateXYZ(tX, tY, tZ))
-        scaledPoints = QGraphicsCubeGroup.useMatrix(translatedPoints, QGraphicsCubeGroup.scaleXYZ(sX, sY, sZ))
-        camZ_points = QGraphicsCubeGroup.useMatrix(scaledPoints, QGraphicsCubeGroup.cameraZ(camZ))
+        scaledPoints = QGraphicsCubeGroup.useMatrix(rZ_points, QGraphicsCubeGroup.scaleXYZ(sX, sY, sZ))
+        translatedPoints = QGraphicsCubeGroup.useMatrix(scaledPoints, QGraphicsCubeGroup.translateXYZ(tX, tY, tZ))
+        camZ_points = QGraphicsCubeGroup.useMatrix(translatedPoints, QGraphicsCubeGroup.cameraZ(camZ))
         projected_points = QGraphicsCubeGroup.useMatrix(camZ_points, QGraphicsCubeGroup.orthographicProjection())
         lines = QGraphicsCubeGroup.createLines(projected_points, scaleFactor)
 
