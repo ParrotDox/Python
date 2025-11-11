@@ -244,7 +244,7 @@ class RotateDialog(QDialog, AdditionalMethods):
                         camZ = old_cube.camZ
                         scaleF = scaleFactor
 
-                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX + rotateX, rY + rotateY, rZ + rotateZ, camZ, scaleF)
+                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ + rotateX, camZ, scaleF)
                         self.cube = new_cube
 
                         #replace old cube by new cube

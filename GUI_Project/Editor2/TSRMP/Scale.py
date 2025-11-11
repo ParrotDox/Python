@@ -42,7 +42,7 @@ class ScaleDialog(QDialog, AdditionalMethods):
             scaler_Y = QDoubleSpinBox(minimum=-10000, maximum=10000); scaler_Y.setMinimumWidth(50); scaler_Y.setMinimumHeight(35)
             label_sX = QLabel("Scale x")
             label_sY = QLabel("Scale y")
-            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.scale(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, scaler_X.value(), scaler_Y.value(), 0))
+            confirm_2D = QPushButton("Confirm"); confirm_2D.clicked.connect(lambda: self.scale(self.scene, self.figure, self.item, self.groupItem, self.points, self.scaleFactor, scaler_X.value(), scaler_Y.value(), 1))
             confirm_2D.setFixedHeight(35)
             #layout
             mainLayout.addWidget(label_sX)

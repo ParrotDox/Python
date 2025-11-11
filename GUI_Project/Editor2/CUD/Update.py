@@ -42,10 +42,10 @@ class UpdateDialog(QDialog):
             confirm_2D.setFixedHeight(35)
             #layout
             mainLayout = QGridLayout(); mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop); mainLayout.setSpacing(10)
-            mainLayout.addWidget(label_x1, 0, 0); mainLayout.addWidget(label_x2, 0, 1)
-            mainLayout.addWidget(x1, 1, 0); mainLayout.addWidget(x2, 1, 1)
-            mainLayout.addWidget(label_y1, 2, 0); mainLayout.addWidget(label_y2, 2, 1)
-            mainLayout.addWidget(y1, 3, 0); mainLayout.addWidget(y2, 3, 1)
+            mainLayout.addWidget(label_x1, 0, 0); mainLayout.addWidget(label_y1, 0, 1)
+            mainLayout.addWidget(x1, 1, 0); mainLayout.addWidget(y1, 1, 1)
+            mainLayout.addWidget(label_x2, 2, 0); mainLayout.addWidget(label_y2, 2, 1)
+            mainLayout.addWidget(x2, 3, 0); mainLayout.addWidget(y2, 3, 1)
             mainLayout.addWidget(confirm_2D, 4, 0, 1, 2)
         elif figure == Figures.CUBE:
             #widgets

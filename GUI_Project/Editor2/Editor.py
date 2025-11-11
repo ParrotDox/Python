@@ -478,35 +478,13 @@ class EditorWidget(QWidget):
 
             dialog = ScaleDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
-            #If has 3D -> prevent scaling
-
-            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
-            mixedGroups.append(self.currentGroup)
-
-            for gr in mixedGroups:
-
-                for item in gr.childItems():
-
-                    if isinstance(item, QGraphicsCubeGroup):
-
-                        return
+            
                     
         elif figureType == Figures.MIXED:
 
             dialog = ScaleDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
-            #If has 3D -> prevent scaling
-
-            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
-            mixedGroups.append(self.currentGroup)
-
-            for gr in mixedGroups:
-
-                for item in gr.childItems():
-
-                    if isinstance(item, QGraphicsCubeGroup):
-
-                        return
+            
         elif figureType == Figures.CUBE:
 
             dialog = ScaleDialog(scene, Figures.CUBE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
@@ -623,35 +601,11 @@ class EditorWidget(QWidget):
 
             dialog = RotateDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
-            #If has 3D -> prevent rotation
-
-            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
-            mixedGroups.append(self.currentGroup)
-
-            for gr in mixedGroups:
-
-                for item in gr.childItems():
-
-                    if isinstance(item, QGraphicsCubeGroup):
-
-                        return
                     
         elif figureType == Figures.MIXED:
 
             dialog = RotateDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
-            #If has 3D -> prevent rotation
-
-            mixedGroups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsMixedGroup))
-            mixedGroups.append(self.currentGroup)
-
-            for gr in mixedGroups:
-
-                for item in gr.childItems():
-
-                    if isinstance(item, QGraphicsCubeGroup):
-
-                        return
         elif figureType == Figures.CUBE:
 
             dialog = RotateDialog(scene, Figures.CUBE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
@@ -1317,14 +1271,7 @@ class EditorWidget(QWidget):
                             rZ = old_cube.rZ
                             camZ = old_cube.camZ
 
-                            if gr.sX < 0:
-                                delta.setX(delta.x() * -1)
-                                tX = tX * -1
-                            if gr.sY < 0:
-                                delta.setX(delta.y() * -1)
-                                tY = tY * -1
-                            if gr.sZ < 0:
-                                tZ = tZ * -1
+                            
 
                             new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
                             self.replaceItemEverywhere(scene, library, old_cube, new_cube, new_cube.points)
@@ -1345,14 +1292,6 @@ class EditorWidget(QWidget):
                             rZ = old_cube.rZ
                             camZ = old_cube.camZ
 
-                            if gr.sX < 0:
-                                delta.setX(delta.x() * -1)
-                                tX = tX * -1
-                            if gr.sY < 0:
-                                delta.setX(delta.y() * -1)
-                                tY = tY * -1
-                            if gr.sZ < 0:
-                                tZ = tZ * -1
 
                             
                             parent: QGraphicsMixedGroup = old_cube.parentItem()
