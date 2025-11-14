@@ -1,104 +1,97 @@
-import math
-class matrixTransformationClass():
+# view_3d_projection.py
+import sys, math
+from PySide6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene
+from PySide6.QtGui import QPen, QBrush, QColor, QFont
+from PySide6.QtCore import Qt
+
+# ---------- твой класс ----------
+class matrixTransformationClass:
     def __init__(self):
-
-        #    X    Y    Z
         self.points = [
-            [0,0,3], 
-            [1,0,3],   
-            [2,0,3],  
-            [3,0,3],  
-            [3,0,0],  
-            [0,0,0],  
-            [1,1,3],  
-            [2,1,3],
-            [0,2,3],
-            [3,2,3],
-            [3,2,0],
-            [0,2,0],
-            [2,3,0],
-            [2,3,3]
-        ]
-
-    @staticmethod
-    def useMatrix(points: list[list[float]], matrix: list[list[float]]):
-        new_points = []
-        for pt in points:
-            x, y, z = pt
-            x_new = matrix[0][0]*x + matrix[0][1]*y + matrix[0][2]*z + matrix[0][3]*1
-            y_new = matrix[1][0]*x + matrix[1][1]*y + matrix[1][2]*z + matrix[1][3]*1
-            z_new = matrix[2][0]*x + matrix[2][1]*y + matrix[2][2]*z + matrix[2][3]*1
-            w_new = matrix[3][0]*x + matrix[3][1]*y + matrix[3][2]*z + matrix[3][3]*1
-        
-            if w_new != 0:
-                new_points.append([x_new/w_new, y_new/w_new, z_new/w_new])
-            else:
-                new_points.append([x_new, y_new, z_new])
-        return new_points
-    @staticmethod
-    def translateXYZ(x, y, z):
-        return [
-            [1, 0, 0, x],
-            [0, 1, 0, y],
-            [0, 0, 1, z],
-            [0, 0, 0, 1]
+            [0,0,3],[1,0,3],[2,0,3],[3,0,3],[3,0,0],[0,0,0],
+            [1,1,3],[2,1,3],[0,2,3],[3,2,3],[3,2,0],[0,2,0],[2,3,0],[2,3,3]
         ]
     @staticmethod
-    def scaleXYZ(x, y, z):
-        return [
-            [x, 0, 0, 0],
-            [0, y, 0, 0],
-            [0, 0, z, 0],
-            [0, 0, 0, 1]
-        ]
+    def useMatrix(points, matrix):
+        out=[]
+        for x,y,z in points:
+            x1=matrix[0][0]*x+matrix[0][1]*y+matrix[0][2]*z+matrix[0][3]
+            y1=matrix[1][0]*x+matrix[1][1]*y+matrix[1][2]*z+matrix[1][3]
+            z1=matrix[2][0]*x+matrix[2][1]*y+matrix[2][2]*z+matrix[2][3]
+            w = matrix[3][0]*x+matrix[3][1]*y+matrix[3][2]*z+matrix[3][3]
+            if w != 0: out.append([x1/w, y1/w, z1/w])
+            else: out.append([x1,y1,z1])
+        return out
     @staticmethod
-    def rotationX(angle):
-        c = math.cos(math.radians(angle))
-        s = math.sin(math.radians(angle))
-        return [
-            [1, 0, 0, 0],
-            [0, c, -s, 0],
-            [0, s, c, 0],
-            [0, 0, 0, 1]
-        ]
+    def rotationX(a):
+        c,s = math.cos(math.radians(a)), math.sin(math.radians(a))
+        return [[1,0,0,0],[0,c,-s,0],[0,s,c,0],[0,0,0,1]]
     @staticmethod
-    def rotationY(angle):
-        c = math.cos(math.radians(angle))
-        s = math.sin(math.radians(angle))
-        return [
-            [c, 0, s, 0],
-            [0, 1, 0, 0],
-            [-s, 0, c, 0],
-            [0, 0, 0, 1]
-        ]
-    @staticmethod
-    def rotationZ(angle):
-        c = math.cos(math.radians(angle))
-        s = math.sin(math.radians(angle))
-        return [
-            [c, s, 0, 0],
-            [-s, c, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-        ]
+    def rotationY(a):
+        c,s = math.cos(math.radians(a)), math.sin(math.radians(a))
+        return [[c,0,s,0],[0,1,0,0],[-s,0,c,0],[0,0,0,1]]
     @staticmethod
     def orthographicProjection():
-        return [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 1]
-        ]
+        return [[1,0,0,0],[0,1,0,0],[0,0,0,0],[0,0,0,1]]
     @staticmethod
-    def cameraZ(Zvalue):
-        return [
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, -1/Zvalue, 1]
-        ]
+    def cameraZ(zv):
+        return [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,-1/zv,1]]
 
-figure = matrixTransformationClass()
-pts_rX = matrixTransformationClass.useMatrix(figure.points, matrixTransformationClass.rotationX(30))
-pts_rY = matrixTransformationClass.useMatrix(pts_rX, matrixTransformationClass.rotationY(45))
-pts_Cz = matrixTransformationClass.useMatrix(pts_rY, matrixTransformationClass.cameraZ(8))
+# ---------- исходные данные ----------
+LINES = [
+ ("A","B"),("B","C"),("C","D"),("D","E"),("E","F"),("A","F"),
+ ("A","G"),("B","M"),("C","N"),("D","H"),("E","I"),("F","J"),
+ ("M","N"),("G","H"),("H","I"),("I","J"),("G","J"),("G","L"),
+ ("L","H"),("J","K"),("K","I"),("L","K")
+]
+POINTS_LABELS = ["A","B","C","D","E","F","M","N","G","H","I","J","K","L"]
+
+# ---------- получение проекции ----------
+a,b,camZ = 30,60,8
+f = matrixTransformationClass()
+pts = f.points
+pts = f.useMatrix(pts, f.rotationX(a))
+pts = f.useMatrix(pts, f.rotationY(b))
+pts = f.useMatrix(pts, f.cameraZ(camZ))
+pts = f.useMatrix(pts, f.orthographicProjection())
+
+# ---------- PySide отрисовка ----------
+app = QApplication(sys.argv)
+scene = QGraphicsScene()
+view = QGraphicsView(scene)
+view.resize(800,600)
+view.setWindowTitle("3D -> Orthographic projection (rotX=30, rotY=60, camZ=8)")
+
+# Сетка
+pen_grid = QPen(QColor(220,220,220))
+for i in range(-10,11):
+    scene.addLine(-10,i,10,i,pen_grid)
+    scene.addLine(i,-10,i,10,pen_grid)
+# Оси
+scene.addLine(-10,0,10,0,QPen(Qt.black))
+scene.addLine(0,-10,0,10,QPen(Qt.black))
+
+# Масштаб
+scale = 80
+# Центр
+cx,cy = 400,300
+
+# Словарь точек
+P = {name:(p[0],p[1]) for name,p in zip(POINTS_LABELS, pts)}
+
+# Линии
+pen_edge = QPen(QColor(50,80,200))
+for a,b in LINES:
+    if a in P and b in P:
+        x1,y1=P[a]; x2,y2=P[b]
+        scene.addLine(cx+x1*scale, cy-y1*scale, cx+x2*scale, cy-y2*scale, pen_edge)
+
+# Точки
+for name,(x,y) in P.items():
+    scene.addEllipse(cx+x*scale-3, cy-y*scale-3, 6,6, QPen(Qt.black), QBrush(Qt.red))
+    text = scene.addText(name, QFont("Arial",8))
+    text.setPos(cx+x*scale+4, cy-y*scale-4)
+
+view.setBackgroundBrush(QColor(245,245,245))
+view.show()
+sys.exit(app.exec())
