@@ -122,7 +122,26 @@ class MirrorDialog(QDialog, AdditionalMethods):
                 'border: 2px solid #632599;'
             '}'
         )
-        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + checkBox_stylesheet
+        checkBox_stylesheet = (
+            'QCheckBox {'
+                'color: #132238;'
+                'font-family: "Work Sans";'
+                'font-size: 16px;'
+                'spacing: 8px;'
+            '}'
+
+            'QCheckBox::indicator {'
+                'border: 2px solid #632599;'
+                'border-radius: 3px;'
+                'background-color: #DBB1FF;'
+            '}'
+
+            'QCheckBox::indicator:checked {'
+                'background-color: #632599;'
+                'border: 2px solid #632599;'
+            '}'
+        )
+        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + checkBox_stylesheet + checkBox_stylesheet
         self.setStyleSheet(styleSheet)
         pass
     
@@ -166,25 +185,19 @@ class MirrorDialog(QDialog, AdditionalMethods):
                         parent = gr.parentItem()
 
                         old_cube: QGraphicsCubeGroup = gr
-                        tX = old_cube.tX
-                        tY = old_cube.tY
-                        tZ = old_cube.tZ
-                        sX = old_cube.sX
-                        sY = old_cube.sY
-                        sZ = old_cube.sZ
+                        sX = 1
+                        sY = 1
+                        sZ = 1
                         if mirrorX:
-                            sX = sX * -1
+                            sX = -1
                         if mirrorY:
-                            sY = sY * -1
+                            sY = -1
                         if mirrorZ:
-                            sZ = sZ * -1
-                        rX = old_cube.rX
-                        rY = old_cube.rY
-                        rZ = old_cube.rZ
+                            sZ = -1
                         camZ = old_cube.camZ
                         scaleF = scaleFactor
 
-                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+                        new_cube = AdditionalMethods.createCustomCube(0, 0, 0, sX, sY, sZ, 0, 0, 0, camZ, scaleF, old_cube)
                         self.cube = new_cube
 
                         #replace old cube by new cube
@@ -233,25 +246,19 @@ class MirrorDialog(QDialog, AdditionalMethods):
         elif figure == Figures.CUBE:
 
             old_cube: QGraphicsCubeGroup = item
-            tX = old_cube.tX
-            tY = old_cube.tY
-            tZ = old_cube.tZ
+            sX = 1
+            sY = 1
+            sZ = 1
             if mirrorX:
-                tX = tX * -1
+                sX = -1
             if mirrorY:
-                tY = tY * -1
+                sY = -1
             if mirrorZ:
-                tZ = tZ * -1
-            sX = old_cube.sX
-            sY = old_cube.sY
-            sZ = old_cube.sZ
-            rX = old_cube.rX
-            rY = old_cube.rY
-            rZ = old_cube.rZ
+                sZ = -1
             camZ = old_cube.camZ
             scaleF = scaleFactor
 
-            new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+            new_cube = AdditionalMethods.createCustomCube(0, 0, 0, sX, sY, sZ, 0, 0, 0, camZ, scaleF, old_cube)
             self.cube = new_cube
         self.accept()
     

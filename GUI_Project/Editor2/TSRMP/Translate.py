@@ -181,19 +181,10 @@ class TranslateDialog(QDialog, AdditionalMethods):
                         parent = gr.parentItem()
 
                         old_cube: QGraphicsCubeGroup = gr
-                        tX = old_cube.tX
-                        tY = old_cube.tY
-                        tZ = old_cube.tZ
-                        sX = old_cube.sX
-                        sY = old_cube.sY
-                        sZ = old_cube.sZ
-                        rX = old_cube.rX
-                        rY = old_cube.rY
-                        rZ = old_cube.rZ
                         camZ = old_cube.camZ
                         scaleF = scaleFactor
 
-                        new_cube = AdditionalMethods.createCustomCube(tX + translationX, tY + translationY, tZ + translationZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+                        new_cube = AdditionalMethods.createCustomCube(translationX, translationY, translationZ, 1, 1, 1, 0, 0, 0, camZ, scaleF, old_cube)
                         self.cube = new_cube
 
                         #replace old cube by new cube
@@ -237,19 +228,10 @@ class TranslateDialog(QDialog, AdditionalMethods):
         elif figure == Figures.CUBE:
 
             old_cube: QGraphicsCubeGroup = item
-            tX = old_cube.tX
-            tY = old_cube.tY
-            tZ = old_cube.tZ
-            sX = old_cube.sX
-            sY = old_cube.sY
-            sZ = old_cube.sZ
-            rX = old_cube.rX
-            rY = old_cube.rY
-            rZ = old_cube.rZ
             camZ = old_cube.camZ
             scaleF = scaleFactor
 
-            new_cube = AdditionalMethods.createCustomCube(tX + translationX, tY + translationY, tZ + translationZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+            new_cube = AdditionalMethods.createCustomCube(translationX, translationY, translationZ, 1, 1, 1, 0, 0, 0, camZ, scaleF, old_cube)
             self.cube = new_cube
         
         self.accept()

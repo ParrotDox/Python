@@ -204,24 +204,14 @@ class QGraphicsMixedGroup(QGraphicsCustomItemGroup):
 
         return super().removeFromGroup(item)
 class QGraphicsCubeGroup(QGraphicsMixedGroup):
-    def __init__(self, scaleFactor, tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ):
+    def __init__(self, scaleFactor, camZ):
         super().__init__()
 
-        self.equation = f"CUBE: (tX = {tX}, tY = {tY})"
-        self.scaleFactor = scaleFactor
-        self.tX = tX
-        self.tY = tY
-        self.tZ = tZ
-        self.sX = sX
-        self.sY = sY
-        self.sZ = sZ
-        self.rX = rX
-        self.rY = rY
-        self.rZ = rZ
+        self.equation = f"CUBE: (camZ = {camZ})"
         self.camZ = camZ
 
         #    X    Y    Z
-        self.cubePoints = [
+        self.cubeRawPoints = [
             [-1, -1, -1], 
             [ 1, -1, -1],   
             [ 1,  1, -1],  
@@ -231,24 +221,28 @@ class QGraphicsCubeGroup(QGraphicsMixedGroup):
             [ 1,  1,  1],  
             [-1,  1,  1]   
         ]
-        self.pairs = [
-            [self.cubePoints[0], self.cubePoints[1]],  
-            [self.cubePoints[1], self.cubePoints[2]],  
-            [self.cubePoints[2], self.cubePoints[3]],  
-            [self.cubePoints[3], self.cubePoints[0]],  
 
-            [self.cubePoints[4], self.cubePoints[5]],  
-            [self.cubePoints[5], self.cubePoints[6]],  
-            [self.cubePoints[6], self.cubePoints[7]],  
-            [self.cubePoints[7], self.cubePoints[4]],  
+        self.rawPairs = [
+            [self.cubeRawPoints[0], self.cubeRawPoints[1]],  
+            [self.cubeRawPoints[1], self.cubeRawPoints[2]],  
+            [self.cubeRawPoints[2], self.cubeRawPoints[3]],  
+            [self.cubeRawPoints[3], self.cubeRawPoints[0]],  
 
-            [self.cubePoints[0], self.cubePoints[4]],  
-            [self.cubePoints[1], self.cubePoints[5]],  
-            [self.cubePoints[2], self.cubePoints[6]],  
-            [self.cubePoints[3], self.cubePoints[7]]   
+            [self.cubeRawPoints[4], self.cubeRawPoints[5]],  
+            [self.cubeRawPoints[5], self.cubeRawPoints[6]],  
+            [self.cubeRawPoints[6], self.cubeRawPoints[7]],  
+            [self.cubeRawPoints[7], self.cubeRawPoints[4]],  
+
+            [self.cubeRawPoints[0], self.cubeRawPoints[4]],  
+            [self.cubeRawPoints[1], self.cubeRawPoints[5]],  
+            [self.cubeRawPoints[2], self.cubeRawPoints[6]],  
+            [self.cubeRawPoints[3], self.cubeRawPoints[7]]   
         ]
-        self.lines = self.createLines(self.cubePoints, scaleFactor)
-        self.updateCube(self.cubePoints, self.lines)
+
+        self.lines = self.createLines(self.cubeRawPoints, scaleFactor)
+        camZ_points = QGraphicsCubeGroup.useMatrix(self.cubeRawPoints, QGraphicsCubeGroup.cameraZ(camZ))
+        projected_points = QGraphicsCubeGroup.useMatrix(camZ_points, QGraphicsCubeGroup.orthographicProjection())
+        self.updateCube(self.cubeRawPoints, projected_points, self.lines)
 
     @staticmethod
     def useMatrix(points: list[list[float]], matrix: list[list[float]]):
@@ -354,11 +348,11 @@ class QGraphicsCubeGroup(QGraphicsMixedGroup):
             lines.append(lineItem)
         
         return lines
-    def updateCube(self, points, lines: list[QGraphicsLineItem]):
+    def updateCube(self, raw_points, projected_points, lines: list[QGraphicsLineItem]):
         
         '''Update metadata points'''
         self.points = []
-        for pt in points:
+        for pt in projected_points:
             self.points.append(QPointF(pt[0], pt[1]))
 
         '''Update children'''
@@ -368,30 +362,103 @@ class QGraphicsCubeGroup(QGraphicsMixedGroup):
             self.addToGroup(line)
         
         '''Update cube points'''
-        self.cubePoints = points
+        self.cubeRawPoints = raw_points
 
-        '''Update pairs'''
-        self.pairs = [
-            [points[0], points[1]],  
-            [points[1], points[2]],  
-            [points[2], points[3]],  
-            [points[3], points[0]],  
+        '''Update rawPairs'''
+        self.rawPairs = [
+            [raw_points[0], raw_points[1]],  
+            [raw_points[1], raw_points[2]],  
+            [raw_points[2], raw_points[3]],  
+            [raw_points[3], raw_points[0]],  
 
-            [points[4], points[5]],  
-            [points[5], points[6]],  
-            [points[6], points[7]],  
-            [points[7], points[4]],  
+            [raw_points[4], raw_points[5]],  
+            [raw_points[5], raw_points[6]],  
+            [raw_points[6], raw_points[7]],  
+            [raw_points[7], raw_points[4]],  
 
-            [points[0], points[4]],  
-            [points[1], points[5]],  
-            [points[2], points[6]],  
-            [points[3], points[7]]   
+            [raw_points[0], raw_points[4]],  
+            [raw_points[1], raw_points[5]],  
+            [raw_points[2], raw_points[6]],  
+            [raw_points[3], raw_points[7]]   
         ]
 
         '''Update lines'''
         self.lines = lines
+class QGraphicsLineCubeGroup(QGraphicsCubeGroup):
+    def __init__(self, startPoint: list[int], endPoint: list[int],scaleFactor, camZ):
+        super().__init__(scaleFactor, camZ)
+        self.equation = f"3D LINE: (camZ = {camZ})"
+        self.camZ = camZ
+
+        self.startPoint: list[int] = startPoint
+        self.endPoint: list[int] = endPoint
+
+        #    X    Y    Z
+        self.cubeRawPoints = [
+            startPoint, 
+            endPoint 
+        ]
+
+        self.rawPairs = [
+            [self.cubeRawPoints[0], self.cubeRawPoints[1]] 
+        ]
+
+        self.lines = self.createLines(self.cubeRawPoints, scaleFactor)
+        camZ_points = QGraphicsCubeGroup.useMatrix(self.cubeRawPoints, QGraphicsCubeGroup.cameraZ(camZ))
+        projected_points = QGraphicsCubeGroup.useMatrix(camZ_points, QGraphicsCubeGroup.orthographicProjection())
+        self.updateCube(self.cubeRawPoints, projected_points, self.lines)    
+
+    def updateCube(self, raw_points, projected_points, lines: list[QGraphicsLineItem]):
         
+        '''Update metadata points'''
+        self.points = []
+        for pt in projected_points:
+            self.points.append(QPointF(pt[0], pt[1]))
+
+        '''Update children'''
+        for chld in self.childItems():
+            self.removeFromGroup(chld)
+        for line in lines:
+            self.addToGroup(line)
         
+        '''Update cube points'''
+        self.cubeRawPoints = raw_points
+
+        '''Update rawPairs'''
+        self.rawPairs = [
+            [raw_points[0], raw_points[1]]
+        ]
+
+        '''Update lines'''
+        self.lines = lines  
+    @staticmethod
+    def createLines(points, scaleFactor):
+        pairs = [
+            [points[0], points[1]]
+        ]
+
+        lines = []
+
+        for pair in pairs:
+            
+            lineItem = AdditionalMethods.createCustomLine([QPointF(pair[0][0], pair[0][1]), QPointF(pair[1][0], pair[1][1])], scaleFactor)
+            lines.append(lineItem)
+        
+        return lines
+    @staticmethod
+    def createLines(points, scaleFactor):
+        pairs = [
+            [points[0], points[1]]
+        ]
+
+        lines = []
+
+        for pair in pairs:
+            
+            lineItem = AdditionalMethods.createCustomLine([QPointF(pair[0][0], pair[0][1]), QPointF(pair[1][0], pair[1][1])], scaleFactor)
+            lines.append(lineItem)
+        
+        return lines
 class AdditionalMethods():
     @staticmethod
     def whatFigure(item: QGraphicsItem):
@@ -447,23 +514,25 @@ class AdditionalMethods():
         group.equation = f"LINE: x - {round(points[0].x(), 2)} / {round(points[1].x() - points[0].x(), 2)} = y - {round(points[0].y(), 2)} / {round(points[1].y() - points[0].y(), 2)}"
         return group
     @staticmethod
-    def createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleFactor):
+    def createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleFactor, old_cube:QGraphicsCubeGroup=None):
         
-        '''Create points'''
-        cube = QGraphicsCubeGroup(scaleFactor, tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ)
+        cube = QGraphicsCubeGroup(scaleFactor, camZ)
         lines = None
         projected_points = None
+
+        '''Create points'''
+        if old_cube == None:
+            pass
+        else:
+            if isinstance(old_cube, QGraphicsLineCubeGroup):
+                return AdditionalMethods.createCustomCubeLine(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleFactor, old_cube, None, None)
+            
+            cube.rawPairs = old_cube.rawPairs
+            cube.cubeRawPoints = old_cube.cubeRawPoints
+            cube.points = old_cube.points
+
         '''
-            scaledPoints = QGraphicsCubeGroup.useMatrix(cube.cubePoints, QGraphicsCubeGroup.scaleXYZ(sX, sY, sZ))
-            rX_points = QGraphicsCubeGroup.useMatrix(scaledPoints, QGraphicsCubeGroup.rotationX(rX))
-            rY_points = QGraphicsCubeGroup.useMatrix(rX_points, QGraphicsCubeGroup.rotationY(rY))
-            rZ_points = QGraphicsCubeGroup.useMatrix(rY_points, QGraphicsCubeGroup.rotationZ(rZ))
-            translatedPoints = QGraphicsCubeGroup.useMatrix(rZ_points, QGraphicsCubeGroup.translateXYZ(tX, tY, tZ))
-            camZ_points = QGraphicsCubeGroup.useMatrix(translatedPoints, QGraphicsCubeGroup.cameraZ(camZ))
-            projected_points = QGraphicsCubeGroup.useMatrix(camZ_points, QGraphicsCubeGroup.orthographicProjection())
-            lines = QGraphicsCubeGroup.createLines(projected_points, scaleFactor)
-        '''
-        rX_points = QGraphicsCubeGroup.useMatrix(cube.cubePoints, QGraphicsCubeGroup.rotationX(rX))
+        rX_points = QGraphicsCubeGroup.useMatrix(cube.cubeRawPoints, QGraphicsCubeGroup.rotationX(rX))
         rY_points = QGraphicsCubeGroup.useMatrix(rX_points, QGraphicsCubeGroup.rotationY(rY))
         rZ_points = QGraphicsCubeGroup.useMatrix(rY_points, QGraphicsCubeGroup.rotationZ(rZ))
         scaledPoints = QGraphicsCubeGroup.useMatrix(rZ_points, QGraphicsCubeGroup.scaleXYZ(sX, sY, sZ))
@@ -471,15 +540,64 @@ class AdditionalMethods():
         camZ_points = QGraphicsCubeGroup.useMatrix(translatedPoints, QGraphicsCubeGroup.cameraZ(camZ))
         projected_points = QGraphicsCubeGroup.useMatrix(camZ_points, QGraphicsCubeGroup.orthographicProjection())
         lines = QGraphicsCubeGroup.createLines(projected_points, scaleFactor)
+        '''
+        translatedPoints = QGraphicsCubeGroup.useMatrix(cube.cubeRawPoints, QGraphicsCubeGroup.translateXYZ(tX, tY, tZ))
+        scaledPoints = QGraphicsCubeGroup.useMatrix(translatedPoints, QGraphicsCubeGroup.scaleXYZ(sX, sY, sZ))
+        rX_points = QGraphicsCubeGroup.useMatrix(scaledPoints, QGraphicsCubeGroup.rotationX(rX))
+        rY_points = QGraphicsCubeGroup.useMatrix(rX_points, QGraphicsCubeGroup.rotationY(rY))
+        rZ_points = QGraphicsCubeGroup.useMatrix(rY_points, QGraphicsCubeGroup.rotationZ(rZ)); raw_points = rZ_points
+        camZ_points = QGraphicsCubeGroup.useMatrix(rZ_points, QGraphicsCubeGroup.cameraZ(camZ))
+        projected_points = QGraphicsCubeGroup.useMatrix(camZ_points, QGraphicsCubeGroup.orthographicProjection())
+        lines = QGraphicsCubeGroup.createLines(projected_points, scaleFactor)
 
         '''Update metadata'''
         cube.scaleFactor = scaleFactor
         cube.baseChildItems = lines
-        cube.equation = f"CUBE: (tX = {round(tX, 2)}, tY = {round(tY, 2)})"
+        cube.equation = f"CUBE: (camZ = {camZ})"
 
         '''Update group'''
-        cube.updateCube(projected_points, lines)
+        cube.updateCube(raw_points, projected_points, lines)
         return cube
+    @staticmethod
+    def createCustomCubeLine(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleFactor, old_cubeLine:QGraphicsLineCubeGroup=None, startPoint:list[int]=None, endPoint:list[int]=None):
+        
+        cubeLine = None
+
+        if startPoint != None and endPoint != None:
+            cubeLine = QGraphicsLineCubeGroup(startPoint, endPoint, scaleFactor, camZ)
+        elif old_cubeLine != None:
+            cubeLine = QGraphicsLineCubeGroup(old_cubeLine.startPoint, old_cubeLine.endPoint, scaleFactor, camZ)
+        else:
+            return
+        
+        lines = None
+        projected_points = None
+
+        '''Create points'''
+        if old_cubeLine == None:
+            pass
+        else:
+            cubeLine.rawPairs = old_cubeLine.rawPairs
+            cubeLine.cubeRawPoints = old_cubeLine.cubeRawPoints
+            cubeLine.points = old_cubeLine.points
+
+        translatedPoints = QGraphicsLineCubeGroup.useMatrix(cubeLine.cubeRawPoints, QGraphicsLineCubeGroup.translateXYZ(tX, tY, tZ))
+        scaledPoints = QGraphicsLineCubeGroup.useMatrix(translatedPoints, QGraphicsLineCubeGroup.scaleXYZ(sX, sY, sZ))
+        rX_points = QGraphicsLineCubeGroup.useMatrix(scaledPoints, QGraphicsLineCubeGroup.rotationX(rX))
+        rY_points = QGraphicsLineCubeGroup.useMatrix(rX_points, QGraphicsLineCubeGroup.rotationY(rY))
+        rZ_points = QGraphicsLineCubeGroup.useMatrix(rY_points, QGraphicsLineCubeGroup.rotationZ(rZ)); raw_points = rZ_points
+        camZ_points = QGraphicsLineCubeGroup.useMatrix(rZ_points, QGraphicsLineCubeGroup.cameraZ(camZ))
+        projected_points = QGraphicsLineCubeGroup.useMatrix(camZ_points, QGraphicsLineCubeGroup.orthographicProjection())
+        lines = QGraphicsLineCubeGroup.createLines(projected_points, scaleFactor)
+
+        '''Update metadata'''
+        cubeLine.scaleFactor = scaleFactor
+        cubeLine.baseChildItems = lines
+        cubeLine.equation = f"3D LINE: (camZ = {camZ})"
+
+        '''Update group'''
+        cubeLine.updateCube(raw_points, projected_points, lines)
+        return cubeLine
     @staticmethod
     def getAllChildItemsByCategory(group: QGraphicsItemGroup, class_types: tuple):
         all_items = []

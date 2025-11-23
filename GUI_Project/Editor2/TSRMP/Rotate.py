@@ -11,7 +11,8 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsLineItem,
     QGraphicsItemGroup,
-    QLabel
+    QLabel,
+    QCheckBox
 )
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
 from PySide6.QtGui import QTransform
@@ -115,7 +116,26 @@ class RotateDialog(QDialog, AdditionalMethods):
                 'padding-left: 5px;'
             '}'
             )
-        styleSheet =  dialog_stylesheet + label_stylesheet + button_stylesheet + spinBox_stylesheet
+        checkBox_stylesheet = (
+            'QCheckBox {'
+                'color: #132238;'
+                'font-family: "Work Sans";'
+                'font-size: 16px;'
+                'spacing: 8px;'
+            '}'
+
+            'QCheckBox::indicator {'
+                'border: 2px solid #632599;'
+                'border-radius: 3px;'
+                'background-color: #DBB1FF;'
+            '}'
+
+            'QCheckBox::indicator:checked {'
+                'background-color: #632599;'
+                'border: 2px solid #632599;'
+            '}'
+        )
+        styleSheet = dialog_stylesheet + label_stylesheet + button_stylesheet + spinBox_stylesheet + checkBox_stylesheet
         self.setStyleSheet(styleSheet)
         pass
     
@@ -232,19 +252,10 @@ class RotateDialog(QDialog, AdditionalMethods):
                         parent = gr.parentItem()
 
                         old_cube: QGraphicsCubeGroup = gr
-                        tX = old_cube.tX
-                        tY = old_cube.tY
-                        tZ = old_cube.tZ
-                        sX = old_cube.sX
-                        sY = old_cube.sY
-                        sZ = old_cube.sZ
-                        rX = old_cube.rX
-                        rY = old_cube.rY
-                        rZ = old_cube.rZ
                         camZ = old_cube.camZ
                         scaleF = scaleFactor
 
-                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ + rotateX, camZ, scaleF)
+                        new_cube = AdditionalMethods.createCustomCube(0, 0, 0, 1, 1, 1, 0, 0, rotateX, camZ, scaleF, old_cube)
                         self.cube = new_cube
 
                         #replace old cube by new cube
@@ -290,19 +301,10 @@ class RotateDialog(QDialog, AdditionalMethods):
         elif figure == Figures.CUBE:
 
             old_cube: QGraphicsCubeGroup = item
-            tX = old_cube.tX
-            tY = old_cube.tY
-            tZ = old_cube.tZ
-            sX = old_cube.sX
-            sY = old_cube.sY
-            sZ = old_cube.sZ
-            rX = old_cube.rX
-            rY = old_cube.rY
-            rZ = old_cube.rZ
             camZ = old_cube.camZ
             scaleF = scaleFactor
 
-            new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX + rotateX, rY + rotateY, rZ + rotateZ, camZ, scaleF)
+            new_cube = AdditionalMethods.createCustomCube(0, 0, 0, 1, 1, 1, rotateX, rotateY, rotateZ, camZ, scaleF, old_cube)
             self.cube = new_cube
 
         self.accept()

@@ -16,6 +16,7 @@ from CustomClasses import (
     QGraphicsPointGroup,
     QGraphicsMixedGroup, 
     QGraphicsCustomView,
+    QGraphicsLineCubeGroup,
     AdditionalMethods)
 from PySide6.QtWidgets import (
     QWidget,
@@ -489,14 +490,11 @@ class EditorWidget(QWidget):
         elif figureType == Figures.LINE:
 
             dialog = ScaleDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
-
             
-                    
         elif figureType == Figures.MIXED:
 
             dialog = ScaleDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
 
-            
         elif figureType == Figures.CUBE:
 
             dialog = ScaleDialog(scene, Figures.CUBE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
@@ -628,8 +626,7 @@ class EditorWidget(QWidget):
         elif figureType == Figures.LINE:
 
             dialog = RotateDialog(scene, Figures.LINE, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
-
-                    
+        
         elif figureType == Figures.MIXED:
 
             dialog = RotateDialog(scene, Figures.MIXED, self.currentItem, self.currentGroup, self.currentItem.points, self.scaleFactor)
@@ -641,7 +638,7 @@ class EditorWidget(QWidget):
         result = dialog.exec()
 
 
-        '''Scale'''
+        '''Rotate'''
         if result == QDialog.DialogCode.Accepted and figureType == Figures.POINT:
             
             #Two variants: or it is a [independed item] or an [item with parent mixedgroup]
@@ -872,7 +869,6 @@ class EditorWidget(QWidget):
 
             self.currentItem = None
             self.currentGroup = None  
-
     def openProjectionDialog(self, scene: QGraphicsScene, library: QListWidget):
         if self.currentItem == None:
             return
@@ -1017,7 +1013,7 @@ class EditorWidget(QWidget):
             buttons[0].setChecked(False)
             buttons[1].setChecked(False)
     def setCurrentItemByCSM(self, scene: QGraphicsScene, library: QListWidget, filteredGroups: list[QGraphicsItemGroup], point: QPointF):
-        '''Method to focus at scene by given objects and selected SelecMode'''
+        '''Method to focus at scene by given objects and selected SelectMode'''
         currentGroup = None
         currentItem = None
         if self.selectMode == SelectModes.POINT:
@@ -1057,8 +1053,8 @@ class EditorWidget(QWidget):
                 self.setFocusAtLibraryByItem(library, currentGroup)
         elif self.selectMode == SelectModes.LINE:
 
-            currentItem = self.selectFromGroups(filteredGroups, (QGraphicsLineGroup))
-            currentGroup = self.selectFromGroups(filteredGroups, (QGraphicsCubeGroup, QGraphicsMixedGroup, QGraphicsLineGroup))
+            currentItem = self.selectFromGroups(filteredGroups, (QGraphicsLineGroup, QGraphicsLineCubeGroup))
+            currentGroup = self.selectFromGroups(filteredGroups, (QGraphicsCubeGroup, QGraphicsMixedGroup, QGraphicsLineCubeGroup, QGraphicsLineGroup))
 
             '''If no selected group'''
             if currentItem is None and self.currentGroup is None:
@@ -1096,6 +1092,9 @@ class EditorWidget(QWidget):
             if currentItem is None and self.currentGroup is None:
                 return
             
+            '''If currentItem is a 3D Line return none'''
+            if isinstance(currentItem, QGraphicsLineCubeGroup):
+                return
             '''Check if currentItem is not a top-parent'''
             if currentItem != None:
                 while True:
@@ -1249,7 +1248,7 @@ class EditorWidget(QWidget):
                             return
             if self.selectMode == SelectModes.LINE:
                 if self.currentItem.parentItem() != None:
-                    if isinstance(self.currentItem.parentItem(), QGraphicsCubeGroup):
+                    if isinstance(self.currentItem.parentItem(), QGraphicsCubeGroup) and not isinstance(self.currentItem.parentItem(), QGraphicsLineCubeGroup):
                         return
                     
             '''Move items'''
@@ -1328,7 +1327,10 @@ class EditorWidget(QWidget):
                     
                     #Set focus
                     self.setCurrentItemByCSM(scene, library, [newLine, parent], QPointF())                
-            elif isinstance(self.currentItem, QGraphicsMixedGroup) and self.selectMode == SelectModes.MIXED:
+            elif isinstance(self.currentItem, QGraphicsLineCubeGroup) and self.selectMode == SelectModes.LINE:
+                '''If has parent group return none'''
+                if self.currentItem != None and self.currentItem.parentItem() != None:
+                    return
                 '''Get all Mixed groups'''
 
                 groups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsCubeGroup, QGraphicsMixedGroup))
@@ -1342,20 +1344,9 @@ class EditorWidget(QWidget):
                         if gr.parentItem() == None:
 
                             old_cube = gr
-                            tX = old_cube.tX
-                            tY = old_cube.tY
-                            tZ = old_cube.tZ
-                            sX = old_cube.sX
-                            sY = old_cube.sY
-                            sZ = old_cube.sZ
-                            rX = old_cube.rX
-                            rY = old_cube.rY
-                            rZ = old_cube.rZ
                             camZ = old_cube.camZ
 
-                            
-
-                            new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
+                            new_cube = AdditionalMethods.createCustomCube(delta.x()/self.scaleFactor, delta.y()/self.scaleFactor, 0, 1, 1, 1, 0, 0, 0, camZ, self.scaleFactor, old_cube)
                             self.replaceItemEverywhere(scene, library, old_cube, new_cube, new_cube.points)
                             self.currentItem = new_cube
                             self.currentGroup = new_cube
@@ -1363,21 +1354,10 @@ class EditorWidget(QWidget):
                         else:
                             
                             old_cube = gr
-                            tX = old_cube.tX
-                            tY = old_cube.tY
-                            tZ = old_cube.tZ
-                            sX = old_cube.sX
-                            sY = old_cube.sY
-                            sZ = old_cube.sZ
-                            rX = old_cube.rX
-                            rY = old_cube.rY
-                            rZ = old_cube.rZ
                             camZ = old_cube.camZ
 
-
-                            
                             parent: QGraphicsMixedGroup = old_cube.parentItem()
-                            new_cube = AdditionalMethods.createCustomCube(tX + delta.x()/self.scaleFactor, tY + delta.y()/self.scaleFactor, tZ + 0, sX, sY, sZ, rX, rY, rZ, camZ, self.scaleFactor)
+                            new_cube = AdditionalMethods.createCustomCube(delta.x()/self.scaleFactor, delta.y()/self.scaleFactor, 0, 1, 1, 1, 0, 0, 0, camZ, self.scaleFactor, old_cube)
                             parent.removeFromGroup(old_cube)
                             self.replaceItemInScene(scene, old_cube, new_cube)
                             parent.addToGroup(new_cube)
@@ -1399,7 +1379,57 @@ class EditorWidget(QWidget):
                             self.replaceItemInScene(scene, oldLine, newLine)
                             gr.addToGroup(newLine)
                         
+                '''Set focus'''
+                self.setCurrentItemByCSM(scene, library, [self.currentGroup], QPointF())
+            elif isinstance(self.currentItem, QGraphicsMixedGroup) and self.selectMode == SelectModes.MIXED:
+                '''Get all Mixed groups'''
 
+                groups: list[QGraphicsMixedGroup] = AdditionalMethods.getAllChildItemsByCategory(self.currentGroup, (QGraphicsCubeGroup, QGraphicsMixedGroup))
+                groups.append(self.currentGroup)
+                
+                '''Create and replace old items in mixed groups'''
+                for gr in groups:
+                    
+                    if isinstance(gr, QGraphicsCubeGroup):
+
+                        if gr.parentItem() == None:
+
+                            old_cube = gr
+                            camZ = old_cube.camZ
+
+                            new_cube = AdditionalMethods.createCustomCube(delta.x()/self.scaleFactor, delta.y()/self.scaleFactor, 0, 1, 1, 1, 0, 0, 0, camZ, self.scaleFactor, old_cube)
+                            self.replaceItemEverywhere(scene, library, old_cube, new_cube, new_cube.points)
+                            self.currentItem = new_cube
+                            self.currentGroup = new_cube
+                            continue
+                        else:
+                            
+                            old_cube = gr
+                            camZ = old_cube.camZ
+
+                            parent: QGraphicsMixedGroup = old_cube.parentItem()
+                            new_cube = AdditionalMethods.createCustomCube(delta.x()/self.scaleFactor, delta.y()/self.scaleFactor, 0, 1, 1, 1, 0, 0, 0, camZ, self.scaleFactor, old_cube)
+                            parent.removeFromGroup(old_cube)
+                            self.replaceItemInScene(scene, old_cube, new_cube)
+                            parent.addToGroup(new_cube)
+                            continue
+                    
+                    for chld in gr.childItems():
+
+                        if isinstance(chld, QGraphicsLineGroup) and not isinstance(chld.parentItem(), QGraphicsCubeGroup):
+
+                            oldLine = chld
+                            old_points: list[QPointF] = oldLine.points
+                            new_points = [old_points[0] + delta/self.scaleFactor, old_points[1] + delta/self.scaleFactor]
+                            
+                            #Create new line
+                            newLine = AdditionalMethods.createCustomLine(new_points, self.scaleFactor)
+                            
+                            #Replace old by new
+                            gr.removeFromGroup(oldLine)
+                            self.replaceItemInScene(scene, oldLine, newLine)
+                            gr.addToGroup(newLine)
+                        
                 '''Set focus'''
                 self.setCurrentItemByCSM(scene, library, [self.currentGroup], QPointF())
     #Deletors: Scene deletion sets the focus!
@@ -1464,18 +1494,9 @@ class EditorWidget(QWidget):
                 
                 parent = parentItem.parentItem()
                 old_cube: QGraphicsCubeGroup = parentItem
-                tX = old_cube.tX
-                tY = old_cube.tY
-                tZ = old_cube.tZ
-                sX = old_cube.sX
-                sY = old_cube.sY
-                sZ = old_cube.sZ
-                rX = old_cube.rX
-                rY = old_cube.rY
-                rZ = old_cube.rZ
                 camZ = old_cube.camZ
                 scaleF = self.scaleFactor
-                new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+                new_cube = AdditionalMethods.createCustomCube(0, 0, 0, 1, 1, 1, 0, 0, 0, camZ, scaleF, old_cube)
                 self.cube = new_cube
                 
                 if parent != None:
@@ -1571,7 +1592,12 @@ class EditorWidget(QWidget):
         
         print("---prepareToGroup---")
         '''Get item from clicked area'''
-        group = self.selectFromGroups(filteredGroups, (QGraphicsMixedGroup, QGraphicsLineGroup, QGraphicsCubeGroup))
+        if self.selectMode == SelectModes.LINE:
+            group = self.selectFromGroups(filteredGroups, (QGraphicsLineGroup, QGraphicsLineCubeGroup))
+            if group.parentItem() != None:
+                return
+        elif self.selectMode == SelectModes.MIXED:
+            group = self.selectFromGroups(filteredGroups, (QGraphicsMixedGroup, QGraphicsCubeGroup))
         '''Check if item is currently focused'''
         if group == self.currentGroup:
             return

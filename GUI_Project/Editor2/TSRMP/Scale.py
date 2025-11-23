@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QGraphicsLineItem,
     QGraphicsItemGroup,
     QGraphicsEllipseItem,
+    QCheckBox,
     QLabel
 )
 from PySide6.QtCore import Qt, Signal, QPointF, QLineF
@@ -231,19 +232,10 @@ class ScaleDialog(QDialog, AdditionalMethods):
                         parent = gr.parentItem()
 
                         old_cube: QGraphicsCubeGroup = gr
-                        tX = old_cube.tX
-                        tY = old_cube.tY
-                        tZ = old_cube.tZ
-                        sX = old_cube.sX
-                        sY = old_cube.sY
-                        sZ = old_cube.sZ
-                        rX = old_cube.rX
-                        rY = old_cube.rY
-                        rZ = old_cube.rZ
                         camZ = old_cube.camZ
                         scaleF = scaleFactor
 
-                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX * scaleX, sY * scaleY, sZ * scaleZ, rX, rY, rZ, camZ, scaleF)
+                        new_cube = AdditionalMethods.createCustomCube(0, 0, 0, 1 * scaleX, 1 * scaleY, 1 * scaleZ, 0, 0, 0, camZ, scaleF, old_cube)
                         self.cube = new_cube
 
                         #replace old cube by new cube
@@ -289,19 +281,10 @@ class ScaleDialog(QDialog, AdditionalMethods):
         elif figure == Figures.CUBE:
 
             old_cube: QGraphicsCubeGroup = item
-            tX = old_cube.tX
-            tY = old_cube.tY
-            tZ = old_cube.tZ
-            sX = old_cube.sX
-            sY = old_cube.sY
-            sZ = old_cube.sZ
-            rX = old_cube.rX
-            rY = old_cube.rY
-            rZ = old_cube.rZ
             camZ = old_cube.camZ
             scaleF = scaleFactor
 
-            new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX * scaleX, sY * scaleY, sZ * scaleZ, rX, rY, rZ, camZ, scaleF)
+            new_cube = AdditionalMethods.createCustomCube(0, 0, 0, 1 * scaleX, 1 * scaleY, 1 * scaleZ, 0, 0, 0, camZ, scaleF, old_cube)
             self.cube = new_cube
         self.accept()
     

@@ -164,25 +164,19 @@ class ProjectionDialog(QDialog, AdditionalMethods):
                         parent = gr.parentItem()
 
                         old_cube: QGraphicsCubeGroup = gr
-                        tX = old_cube.tX
-                        tY = old_cube.tY
-                        tZ = old_cube.tZ
-                        sX = old_cube.sX
-                        sY = old_cube.sY
-                        sZ = old_cube.sZ
+                        sX = 1
+                        sY = 1
+                        sZ = 1
                         if projectedXZ:
                             sY = sX * 0
                         if projectedYZ:
                             sX = sX * 0
                         if projectedXY:
                             sZ = sZ * 0
-                        rX = old_cube.rX
-                        rY = old_cube.rY
-                        rZ = old_cube.rZ
                         camZ = old_cube.camZ
                         scaleF = scaleFactor
 
-                        new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+                        new_cube = AdditionalMethods.createCustomCube(0, 0, 0, sX, sY, sZ, 0, 0, 0, camZ, scaleF, old_cube)
                         self.cube = new_cube
 
                         #replace old cube by new cube
@@ -227,25 +221,19 @@ class ProjectionDialog(QDialog, AdditionalMethods):
                     
         elif figure == Figures.CUBE:
             old_cube: QGraphicsCubeGroup = item
-            tX = old_cube.tX
-            tY = old_cube.tY
-            tZ = old_cube.tZ
-            sX = old_cube.sX
-            sY = old_cube.sY
-            sZ = old_cube.sZ
+            sX = 1
+            sY = 1
+            sZ = 1
             if projectedXZ:
                 sY = sX * 0
             if projectedYZ:
                 sX = sX * 0
             if projectedXY:
                 sZ = sZ * 0
-            rX = old_cube.rX
-            rY = old_cube.rY
-            rZ = old_cube.rZ
             camZ = old_cube.camZ
             scaleF = scaleFactor
 
-            new_cube = AdditionalMethods.createCustomCube(tX, tY, tZ, sX, sY, sZ, rX, rY, rZ, camZ, scaleF)
+            new_cube = AdditionalMethods.createCustomCube(0, 0, 0, sX, sY, sZ, 0, 0, 0, camZ, scaleF, old_cube)
             self.cube = new_cube
         self.accept()
     
