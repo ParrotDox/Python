@@ -1260,9 +1260,14 @@ class EditorWidget(QWidget):
                 oldLine_parent: QGraphicsMixedGroup = oldLine.parentItem() #QGMixedGroup
                 topSideParent = oldLine_parent #Main QGMixedGroup
                 
+                '''Get topside parent'''
                 if oldLine_parent != None:
                     while topSideParent.parentItem() != None:
                         topSideParent = topSideParent.parentItem()
+                
+                '''If topside parent is a mixedgroup return'''
+                if isinstance(topSideParent, QGraphicsMixedGroup):
+                    return
 
                 old_points = oldLine.points
                 new_points: list[QPointF] = []
@@ -1594,8 +1599,9 @@ class EditorWidget(QWidget):
         '''Get item from clicked area'''
         if self.selectMode == SelectModes.LINE:
             group = self.selectFromGroups(filteredGroups, (QGraphicsLineGroup, QGraphicsLineCubeGroup))
-            if group.parentItem() != None:
-                return
+            if group != None:
+                if group.parentItem() != None:
+                    return
         elif self.selectMode == SelectModes.MIXED:
             group = self.selectFromGroups(filteredGroups, (QGraphicsMixedGroup, QGraphicsCubeGroup))
         '''Check if item is currently focused'''
