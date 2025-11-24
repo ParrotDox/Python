@@ -145,7 +145,6 @@ class QGraphicsCustomScene(QGraphicsScene):
         painter.setPen(self.crossPen)
         painter.drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0))
         painter.drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()))
-
 class QOneWayToggleButton(QPushButton):
     def __init__(self, icon: QIcon, text: str):
         super().__init__(icon, text)
@@ -610,3 +609,137 @@ class AdditionalMethods():
                 all_items.extend(AdditionalMethods.getAllChildItemsByCategory(item, class_types))
 
         return all_items
+
+#This code IS NOT MINE, I'M TIRED OF THIS PROJECT. I don't know what's under my commentary
+# SerializableGroup — safe bottom-up deserialization (no scene mutations during build)
+class SerializableGroup:
+    @staticmethod
+    def serialize(group):
+        data = {
+            "type": type(group).__name__,
+            "points": [(p.x(), p.y()) for p in getattr(group, "points", [])],
+            "scaleFactor": getattr(group, "scaleFactor", 1),
+            "children": []
+        }
+
+        # special cases: Cube and LineCube
+        try:
+            from CustomClasses import QGraphicsCubeGroup, QGraphicsLineCubeGroup
+            if isinstance(group, (QGraphicsCubeGroup, QGraphicsLineCubeGroup)):
+                data["cube_meta"] = {
+                    "cubeRawPoints": getattr(group, "cubeRawPoints", None),
+                    "rawPairs": getattr(group, "rawPairs", None),
+                    "camZ": getattr(group, "camZ", None)
+                }
+        except Exception:
+            # if imports fail here (rare), leave cube_meta absent
+            pass
+
+        for ch in group.childItems():
+            if isinstance(ch, QGraphicsItemGroup):
+                data["children"].append(SerializableGroup.serialize(ch))
+
+        return data
+
+    @staticmethod
+    def _deserialize_node(data, scaleFactor):
+        """
+        Build a single node and all its subtree (bottom-up).
+        Do NOT add anything to the QGraphicsScene here.
+        Return the created QGraphicsItemGroup instance (with its children already added to it).
+        """
+        # local imports to avoid circular issues
+        from CustomClasses import (
+            QGraphicsPointGroup,
+            QGraphicsLineGroup,
+            QGraphicsMixedGroup,
+            QGraphicsCubeGroup,
+            QGraphicsLineCubeGroup,
+            QGraphicsCustomItemGroup,
+            AdditionalMethods
+        )
+
+        group_type = data.get("type", "")
+        pts = [QPointF(x, y) for (x, y) in data.get("points", [])]
+        sf = data.get("scaleFactor", scaleFactor)
+
+        # create object (do not add to scene)
+        if group_type == "QGraphicsLineGroup":
+            obj = AdditionalMethods.createCustomLine(pts, sf)
+
+        elif group_type == "QGraphicsPointGroup":
+            obj = QGraphicsPointGroup()
+            obj.points = pts
+            obj.scaleFactor = sf
+            obj.equation = getattr(obj, "equation", "POINT")
+
+        elif group_type == "QGraphicsMixedGroup":
+            obj = QGraphicsMixedGroup()
+            obj.points = pts
+            obj.scaleFactor = sf
+
+        elif group_type == "QGraphicsCubeGroup":
+            meta = data.get("cube_meta", {})
+            camZ = meta.get("camZ", getattr(meta, "camZ", 500))
+            obj = QGraphicsCubeGroup(sf, camZ)
+            # restore geometry metadata if present
+            if "cubeRawPoints" in meta and meta["cubeRawPoints"] is not None:
+                obj.cubeRawPoints = meta["cubeRawPoints"]
+            if "rawPairs" in meta and meta["rawPairs"] is not None:
+                obj.rawPairs = meta["rawPairs"]
+
+            # recalc and apply projection/lines similar to constructor
+            projected = QGraphicsCubeGroup.useMatrix(obj.cubeRawPoints, QGraphicsCubeGroup.cameraZ(obj.camZ))
+            projected = QGraphicsCubeGroup.useMatrix(projected, QGraphicsCubeGroup.orthographicProjection())
+            lines = QGraphicsCubeGroup.createLines(obj.cubeRawPoints, obj.scaleFactor)
+            obj.updateCube(obj.cubeRawPoints, projected, lines)
+
+        elif group_type == "QGraphicsLineCubeGroup":
+            meta = data.get("cube_meta", {})
+            # QGraphicsLineCubeGroup constructor expects start/end (lists) or existing values
+            # we try to extract two endpoints from saved cubeRawPoints if available
+            cube_raw = meta.get("cubeRawPoints", None)
+            if cube_raw and len(cube_raw) >= 2:
+                start = cube_raw[0]
+                end = cube_raw[1]
+            else:
+                # fallback: create minimal line cube with default two points
+                start = [0, 0, 0]
+                end = [1, 1, 1]
+            camZ = meta.get("camZ", getattr(meta, "camZ", 500))
+            obj = QGraphicsLineCubeGroup(start, end, sf, camZ)
+            if "cubeRawPoints" in meta and meta["cubeRawPoints"] is not None:
+                obj.cubeRawPoints = meta["cubeRawPoints"]
+            if "rawPairs" in meta and meta["rawPairs"] is not None:
+                obj.rawPairs = meta["rawPairs"]
+
+            projected = QGraphicsLineCubeGroup.useMatrix(obj.cubeRawPoints, QGraphicsLineCubeGroup.cameraZ(obj.camZ))
+            projected = QGraphicsLineCubeGroup.useMatrix(projected, QGraphicsLineCubeGroup.orthographicProjection())
+            lines = QGraphicsLineCubeGroup.createLines(obj.cubeRawPoints, obj.scaleFactor)
+            obj.updateCube(obj.cubeRawPoints, projected, lines)
+
+        else:
+            # fallback generic group
+            obj = QGraphicsCustomItemGroup()
+            obj.points = pts
+            obj.scaleFactor = sf
+
+        # recursively build children and attach them to obj (bottom-up)
+        for ch_data in data.get("children", []):
+            child_obj = SerializableGroup._deserialize_node(ch_data, scaleFactor)
+            # attach child to parent (still not in scene)
+            try:
+                obj.addToGroup(child_obj)
+            except RuntimeError:
+                # be robust: if addToGroup fails, ignore but continue building
+                pass
+
+        return obj
+
+    @staticmethod
+    def deserialize(data, scaleFactor):
+        """
+        Public API: returns a fully-built QGraphicsItemGroup (hierarchy assembled),
+        but does NOT add it to any scene or library. Caller must add to scene/library.
+        """
+        return SerializableGroup._deserialize_node(data, scaleFactor)

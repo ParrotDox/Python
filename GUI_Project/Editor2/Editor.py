@@ -1,4 +1,6 @@
 import os
+import pickle
+from CustomClasses import SerializableGroup
 from CUD.Create import CreateDialog
 from CUD.Update import UpdateDialog
 from TSRMP.Translate import TranslateDialog
@@ -32,10 +34,14 @@ from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsLineItem,
     QGraphicsEllipseItem,
-    QGraphicsItemGroup
+    QGraphicsItemGroup,
+    QToolBar,
+    QMenuBar,
+    QFileDialog,
+    QMessageBox
 )
 from PySide6.QtCore import Qt, QLineF, QPointF, QPoint, QRect
-from PySide6.QtGui import QPen, QBrush, QColor, QIcon, QPixmap
+from PySide6.QtGui import QPen, QBrush, QColor, QIcon, QPixmap, QAction
 
 class EditorWidget(QWidget):
 
@@ -79,6 +85,9 @@ class EditorWidget(QWidget):
  
     def initUI(self):
         #widgets
+        buttonSave = QPushButton("Save"); buttonSave.setFixedSize(60,35); buttonSave.clicked.connect(lambda: self.saveScene(scene))
+        buttonLoad = QPushButton("Load"); buttonLoad.setFixedSize(60,35); buttonLoad.clicked.connect(lambda: self.loadScene(scene, library))
+
         buttonCreate = QPushButton("C"); buttonCreate.setFixedSize(45,45); buttonCreate.clicked.connect(lambda: self.openCreateDialog(scene, library))
         buttonUpdate = QPushButton("U"); buttonUpdate.setFixedSize(45,45); buttonUpdate.clicked.connect(lambda: self.openUpdateDialog(scene, library))
         buttonDelete = QPushButton("D"); buttonDelete.setFixedSize(45,45); buttonDelete.clicked.connect(lambda: self.deleteCurrentItem(scene, library))
@@ -110,7 +119,11 @@ class EditorWidget(QWidget):
         library = QListWidget(); library.itemClicked.connect(lambda item: self.setCurrentItemByLibrary(scene, library, item))
 
         #layouts
-        mainLayout = QHBoxLayout()
+        mainLayout = QVBoxLayout()
+
+        saveAndLoadLayout = QHBoxLayout(); saveAndLoadLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        functionalLayout = QHBoxLayout()
 
         workspaceLayout = QVBoxLayout()
         libraryLayout = QHBoxLayout()
@@ -123,8 +136,13 @@ class EditorWidget(QWidget):
 
         objectsLayout = QVBoxLayout()
 
-        mainLayout.addLayout(workspaceLayout); mainLayout.addLayout(libraryLayout)
-        mainLayout.setStretchFactor(workspaceLayout, 3); mainLayout.setStretchFactor(libraryLayout, 1)
+        mainLayout.addLayout(saveAndLoadLayout); mainLayout.addLayout(functionalLayout)
+
+        saveAndLoadLayout.setContentsMargins(10,0,0,0)
+        saveAndLoadLayout.addWidget(buttonSave); saveAndLoadLayout.addWidget(buttonLoad)
+
+        functionalLayout.addLayout(workspaceLayout); functionalLayout.addLayout(libraryLayout)
+        functionalLayout.setStretchFactor(workspaceLayout, 3); functionalLayout.setStretchFactor(libraryLayout, 1)
 
         actionsLayout.setContentsMargins(10, 10, 10, 10)
         actionsLayout.addLayout(cudLayout); actionsLayout.addSpacing(15)
@@ -1195,7 +1213,7 @@ class EditorWidget(QWidget):
         scene.addItem(item)
 
         if isinstance(item, QGraphicsMixedGroup):
-            if item not in self.groups:
+            if not (item in self.groups):
                 self.groups.append(item)
     def addItemEverywhere(self, scene: QGraphicsScene, library: QListWidget, item: QGraphicsItemGroup, points: list[QPointF]):
         print(f"AddItemEverywhere: {item}")
@@ -1604,6 +1622,9 @@ class EditorWidget(QWidget):
                     return
         elif self.selectMode == SelectModes.MIXED:
             group = self.selectFromGroups(filteredGroups, (QGraphicsMixedGroup, QGraphicsCubeGroup))
+            '''Prevent preparation of cubeLine'''
+            if isinstance(group, QGraphicsLineCubeGroup):
+                return
         '''Check if item is currently focused'''
         if group == self.currentGroup:
             return
@@ -1656,7 +1677,8 @@ class EditorWidget(QWidget):
                 self.deleteItemFromLibrary(library, group)
             
             self.deleteItemEverywhere(scene, library, group)
-            self.groups.remove(group)
+            if group in self.groups:
+                self.groups.remove(group)
             library.clearFocus()
 
             '''Set to default'''
@@ -1685,3 +1707,48 @@ class EditorWidget(QWidget):
                 group = gr
                 return group
         return group
+    #This code IS NOT MINE, I'M TIRED OF THIS PROJECT. I don't know what's under my commentary
+    #Save and load methods
+    def saveScene(self, scene: QGraphicsScene):
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Save scene",
+            filter="Scene Files (*.pkl);;All Files (*)"
+        )
+        if not filename:
+            return
+        if not filename.endswith(".pkl"):
+            filename += ".pkl"
+
+        from CustomClasses import SerializableGroup
+
+        top_groups = []
+        for item in scene.items():
+            if isinstance(item, QGraphicsCustomItemGroup) and item.parentItem() is None:
+                top_groups.append(SerializableGroup.serialize(item))
+
+        with open(filename, "wb") as f:
+            pickle.dump(top_groups, f)
+    def loadScene(self, scene: QGraphicsScene, library: QListWidget):
+        filename, _ = QFileDialog.getOpenFileName(
+            self, "Load scene",
+            filter="Scene Files (*.pkl);;All Files (*)"
+        )
+        if not filename:
+            return
+
+        from CustomClasses import SerializableGroup
+
+        with open(filename, "rb") as f:
+            saved_groups = pickle.load(f)
+
+        scene.clear()
+        library.clear()
+
+        for data in saved_groups:
+            group = SerializableGroup.deserialize(data, self.scaleFactor)
+            self.addItemEverywhere(scene, library, group, group.points)
+
+
+
+
+        
